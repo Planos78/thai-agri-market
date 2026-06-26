@@ -9,8 +9,12 @@ export async function GET(req: Request) {
   const orchards = await prisma.orchard.findMany({
     where: scope === "ALL" ? {} : { id: { in: scope } },
     orderBy: { createdAt: "desc" },
+    // bug #4: surface LINE binding count so the UI can warn when an orchard is unbound.
+    include: { _count: { select: { lineBindings: true } } },
   });
-  return NextResponse.json({ orchards });
+  return NextResponse.json({
+    orchards: orchards.map((o) => ({ ...o, lineBindingCount: o._count.lineBindings })),
+  });
 }
 
 export async function POST(req: Request) {

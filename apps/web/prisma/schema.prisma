@@ -76,6 +76,9 @@ model Orchard {
   lots  Lot[]
 
   scopes UserOrchardScope[]
+
+  registerCodes OrchardRegisterCode[]
+  lineBindings  OrchardLineBinding[]
 }
 
 model Lot {
@@ -315,4 +318,88 @@ model UserOrchardScope {
   orchard   Orchard   @relation(fields: [orchardId], references: [id])
 
   @@id([adminUserId, orchardId])
+}
+
+// ---------------------------------------------------------------------------
+// Phase 3: LINE staff binding + messaging
+// ---------------------------------------------------------------------------
+
+// LINE staff binding (bug #10: FK to Orchard, not varchar).
+model OrchardRegisterCode {
+  id         String    @id @default(uuid())
+  code       String    @unique
+  orchardId  String
+  redeemedAt DateTime?
+  redeemedBy String? // lineUserId that redeemed
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  orchard Orchard @relation(fields: [orchardId], references: [id])
+
+  @@index([orchardId])
+}
+
+// Which LINE staff belong to which orchard (bug #4: detect "no binding").
+model OrchardLineBinding {
+  id         String   @id @default(uuid())
+  orchardId  String
+  lineUserId String
+  createdAt  DateTime @default(now())
+
+  orchard Orchard @relation(fields: [orchardId], references: [id])
+
+  @@unique([orchardId, lineUserId])
+  @@index([lineUserId])
+}
+
+// Audit LIFF requests (roadmap §3.5 liff_request_logs).
+model LiffRequestLog {
+  id         String   @id @default(uuid())
+  lineUserId String?
+  path       String
+  method     String
+  status     Int
+  createdAt  DateTime @default(now())
+
+  @@index([lineUserId])
+  @@index([createdAt])
+}
+
+// Bot interaction log (roadmap §3.5 line_bot_logs); bug #6: state lives in DB, not memory.
+model LineBotLog {
+  id         String   @id @default(uuid())
+  lineUserId String?
+  eventType  String // "message" | "follow" | "postback" | "unfollow" | ...
+  replyToken String?
+  text       String?
+  rawEvent   String // JSON
+  handled    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([lineUserId])
+}
+
+// Push queue (bug #5 fix: push is NOT fire-and-forget).
+model PushJob {
+  id            String     @id @default(uuid())
+  event         String
+  lineUserId    String
+  message       String
+  status        PushStatus @default(PENDING)
+  attempts      Int        @default(0)
+  maxAttempts   Int        @default(3)
+  lastError     String?
+  nextAttemptAt DateTime   @default(now())
+  sentAt        DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([lineUserId])
+}
+
+enum PushStatus {
+  PENDING
+  SENT
+  FAILED
 }

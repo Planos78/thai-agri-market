@@ -25,7 +25,7 @@ export default function Otp() {
     });
     const d = await res.json();
     if (!res.ok) return setMsg(d.error ?? "error");
-    router.push("/lots");
+    router.push("/pdpa");
   }
 
   return (

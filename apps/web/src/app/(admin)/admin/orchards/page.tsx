@@ -9,6 +9,7 @@ interface Orchard {
   province: string;
   ownerId: string;
   isVerified: boolean;
+  lineBindingCount: number;
 }
 
 export default function AdminOrchards() {
@@ -76,12 +77,19 @@ export default function AdminOrchards() {
       </div>
 
       <table className="w-full text-sm">
-        <thead><tr className="text-left border-b"><th className="py-2">ชื่อ</th><th>จังหวัด</th><th>ยืนยัน</th><th></th></tr></thead>
+        <thead><tr className="text-left border-b"><th className="py-2">ชื่อ</th><th>จังหวัด</th><th>LINE</th><th>ยืนยัน</th><th></th></tr></thead>
         <tbody>
           {orchards.map((o) => (
             <tr key={o.id} className="border-b">
               <td className="py-2">{o.name}</td>
               <td>{o.province}</td>
+              <td>
+                {o.lineBindingCount > 0 ? (
+                  <span className="text-green-700">ผูกแล้ว ({o.lineBindingCount})</span>
+                ) : (
+                  <span className="text-red-600">ยังไม่มีการผูก LINE — จะไม่ได้รับการแจ้งเตือน</span>
+                )}
+              </td>
               <td>{o.isVerified ? "✓" : "-"}</td>
               <td><Button size="sm" variant="outline" onClick={() => toggleVerify(o)}>{o.isVerified ? "ยกเลิกยืนยัน" : "ยืนยัน"}</Button></td>
             </tr>
