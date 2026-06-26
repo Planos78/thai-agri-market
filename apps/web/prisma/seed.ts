@@ -16,6 +16,9 @@ async function main() {
     ["lots.write", "Write lots"],
     ["qc.release", "QC release"],
     ["buyers.read", "Read buyers"],
+    ["fulfillment.reschedule", "Reschedule deliveries"],
+    ["fulfillment.adjust", "Adjust order quantities"],
+    ["delivery.write", "Write delivery + proof"],
   ];
   for (const [code, name] of permCodes) {
     const perm = await prisma.permission.upsert({

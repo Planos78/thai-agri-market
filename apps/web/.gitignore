@@ -24,6 +24,10 @@
 .DS_Store
 *.pem
 
+# uploaded delivery proof images (local storage adapter) — keep the dir, ignore contents
+/public/uploads/*
+!/public/uploads/.gitkeep
+
 # debug
 npm-debug.log*
 yarn-debug.log*

@@ -79,6 +79,8 @@ model Orchard {
 
   registerCodes OrchardRegisterCode[]
   lineBindings  OrchardLineBinding[]
+
+  reviews Review[]
 }
 
 model Lot {
@@ -123,27 +125,36 @@ enum QcStatus {
 // ---------------------------------------------------------------------------
 
 model Order {
-  id               String      @id @default(uuid())
-  orderNo          String      @unique
-  buyerId          String
-  subTotal         Decimal
-  feeAmount        Decimal     @default(0)
-  vatFeeAmount     Decimal     @default(0)
-  totalAmount      Decimal
-  transferAmount   Decimal?
-  status           OrderStatus @default(WAITING_PAYMENT)
-  shippingAddress  String
-  trackingNumber   String?
-  paymentExpiredAt DateTime?
-  paidAt           DateTime?
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  id                 String      @id @default(uuid())
+  orderNo            String      @unique
+  buyerId            String
+  subTotal           Decimal
+  feeAmount          Decimal     @default(0)
+  vatFeeAmount       Decimal     @default(0)
+  totalAmount        Decimal
+  transferAmount     Decimal?
+  refundIntentAmount Decimal     @default(0) // P4: running sum of approved REDUCE refund intent (P5 pays)
+  status             OrderStatus @default(WAITING_PAYMENT)
+  shippingAddress    String
+  trackingNumber     String?
+  deliveryDate       DateTime? // agreed delivery date; reschedule approve mutates it
+  paymentExpiredAt   DateTime?
+  paidAt             DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
   buyer   User        @relation(fields: [buyerId], references: [id])
   items   OrderItem[]
   payment Payment?
 
   callbackLogs PaymentCallbackLog[]
+
+  // Phase 4: fulfillment
+  reschedules      DeliveryReschedule[]
+  adjustments      OrderAdjustment[]
+  increasePayments IncreasePayment[]
+  delivery         Delivery?
+  reviews          Review[]
 }
 
 // Fruit order lifecycle.
@@ -154,6 +165,7 @@ enum OrderStatus {
   DELIVERED
   CANCELLED
   EXPIRED
+  RESCHEDULED
 }
 
 model OrderItem {
@@ -165,6 +177,8 @@ model OrderItem {
 
   order Order @relation(fields: [orderId], references: [id])
   lot   Lot   @relation(fields: [lotId], references: [id])
+
+  adjustments OrderAdjustment[]
 }
 
 // Per-prefix running counter. Incremented under SELECT ... FOR UPDATE inside a
@@ -231,7 +245,12 @@ model Review {
   comment   String?
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  user    User     @relation(fields: [userId], references: [id])
+  orchard Orchard? @relation(fields: [orchardId], references: [id])
+  order   Order?   @relation(fields: [orderId], references: [id])
+
+  @@index([orchardId])
+  @@index([orderId])
 }
 
 // ---------------------------------------------------------------------------
@@ -402,4 +421,135 @@ enum PushStatus {
   PENDING
   SENT
   FAILED
+}
+
+// ---------------------------------------------------------------------------
+// Phase 4: fulfillment (reschedule / adjustment / increase-pay / delivery / review)
+// ---------------------------------------------------------------------------
+
+enum RescheduleStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AdjustmentKind {
+  REDUCE
+  INCREASE
+}
+
+enum AdjustmentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum IncreasePayStatus {
+  PENDING
+  SUCCEEDED
+  EXPIRED
+  CANCELLED
+}
+
+enum DeliveryStatus {
+  PENDING
+  IN_TRANSIT
+  DELIVERED
+}
+
+enum ProposedBy {
+  ORCHARD
+  BUYER
+}
+
+// Orchard proposes / buyer confirms (or vice-versa). Approve mutates Order.deliveryDate.
+model DeliveryReschedule {
+  id           String           @id @default(uuid())
+  orderId      String
+  proposedDate DateTime
+  proposedBy   ProposedBy
+  status       RescheduleStatus @default(PENDING)
+  note         String?
+  decidedBy    String? // adminUserId OR lineUserId of decider
+  decidedAt    DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([status])
+}
+
+// Item-grain qty change. REDUCE -> refund intent; INCREASE -> pay-more (IncreasePayment).
+model OrderAdjustment {
+  id          String           @id @default(uuid())
+  orderId     String
+  orderItemId String
+  kind        AdjustmentKind
+  deltaQty    Int // >0 always; direction in `kind`
+  amount      Decimal // deltaQty * item.price (refund intent for REDUCE / pay-more for INCREASE)
+  status      AdjustmentStatus @default(PENDING)
+  note        String?
+  proposedBy  ProposedBy
+  decidedBy   String?
+  decidedAt   DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  order           Order            @relation(fields: [orderId], references: [id])
+  orderItem       OrderItem        @relation(fields: [orderItemId], references: [id])
+  increasePayment IncreasePayment?
+
+  @@index([orderId])
+  @@index([orderItemId])
+  @@index([status])
+}
+
+// Pay-more on qty INCREASE; mock PSP only (Gate 0). 1:1 with the INCREASE adjustment.
+model IncreasePayment {
+  id           String            @id @default(uuid())
+  adjustmentId String            @unique
+  orderId      String
+  amount       Decimal
+  status       IncreasePayStatus @default(PENDING)
+  pspRef       String?
+  expiresAt    DateTime? // created + HOLD_MS (1h)
+  paidAt       DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  adjustment OrderAdjustment @relation(fields: [adjustmentId], references: [id])
+  order      Order           @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([status])
+}
+
+// Delivery proof. DeliveryImage stores URL/path only, never binary (bug #7).
+model Delivery {
+  id              String         @id @default(uuid())
+  orderId         String         @unique
+  status          DeliveryStatus @default(PENDING)
+  trackingNo      String?
+  carrier         String?
+  proofUploadedBy String? // adminUserId (ops/CX)
+  deliveredAt     DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  order  Order           @relation(fields: [orderId], references: [id])
+  images DeliveryImage[]
+}
+
+model DeliveryImage {
+  id         String   @id @default(uuid())
+  deliveryId String
+  url        String // path or URL ONLY, never binary (bug #7)
+  uploadedAt DateTime @default(now())
+
+  delivery Delivery @relation(fields: [deliveryId], references: [id])
+
+  @@index([deliveryId])
 }
