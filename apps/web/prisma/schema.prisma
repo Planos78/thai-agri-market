@@ -74,6 +74,8 @@ model Orchard {
 
   owner User  @relation(fields: [ownerId], references: [id])
   lots  Lot[]
+
+  scopes UserOrchardScope[]
 }
 
 model Lot {
@@ -90,11 +92,13 @@ model Lot {
   saleWindowStart DateTime?
   saleWindowEnd   DateTime?
   status          LotStatus @default(DRAFT)
+  qcStatus        QcStatus  @default(PENDING)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   orchard    Orchard     @relation(fields: [orchardId], references: [id])
   orderItems OrderItem[]
+  qcAudits   QcAudit[]
 }
 
 enum LotStatus {
@@ -102,6 +106,13 @@ enum LotStatus {
   ACTIVE
   SOLD_OUT
   CANCELLED
+}
+
+enum QcStatus {
+  PENDING
+  RELEASED
+  HOLD
+  DOWNGRADED
 }
 
 // ---------------------------------------------------------------------------
@@ -234,6 +245,9 @@ model AdminUser {
   updatedAt    DateTime @updatedAt
 
   role AdminRole @relation(fields: [roleId], references: [id])
+
+  qcAudits     QcAudit[]
+  orchardScope UserOrchardScope[]
 }
 
 model AdminRole {
@@ -261,4 +275,44 @@ model AdminRolePermission {
   permission Permission @relation(fields: [permissionId], references: [id])
 
   @@id([roleId, permissionId])
+}
+
+// ---------------------------------------------------------------------------
+// QC / consent / scope
+// ---------------------------------------------------------------------------
+
+model QcAudit {
+  id          String   @id @default(uuid())
+  lotId       String
+  fromStatus  QcStatus
+  toStatus    QcStatus
+  action      String // "RELEASE" | "HOLD" | "DOWNGRADE"
+  note        String?
+  adminUserId String
+  createdAt   DateTime @default(now())
+
+  lot       Lot       @relation(fields: [lotId], references: [id])
+  adminUser AdminUser @relation(fields: [adminUserId], references: [id])
+
+  @@index([lotId])
+}
+
+model ConsentLog {
+  id         String   @id @default(uuid())
+  lineUserId String
+  purpose    String
+  granted    Boolean
+  createdAt  DateTime @default(now())
+
+  @@index([lineUserId])
+}
+
+model UserOrchardScope {
+  adminUserId String
+  orchardId   String
+
+  adminUser AdminUser @relation(fields: [adminUserId], references: [id])
+  orchard   Orchard   @relation(fields: [orchardId], references: [id])
+
+  @@id([adminUserId, orchardId])
 }

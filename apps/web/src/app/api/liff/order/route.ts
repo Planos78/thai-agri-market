@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     update: {},
   });
 
-  const lots = await prisma.lot.findMany({ where: { id: { in: items.map((i) => i.lotId) }, status: "ACTIVE" } });
+  const lots = await prisma.lot.findMany({ where: { id: { in: items.map((i) => i.lotId) }, status: "ACTIVE", qcStatus: "RELEASED" } });
   const lotById = new Map(lots.map((l) => [l.id, l]));
 
   const lines: { lotId: string; quantity: number; price: number }[] = [];

@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { verifyAdminJwt, bearer } from "@/lib/auth";
+import { requirePerm } from "@/lib/rbac";
 
 // RBAC-scoped orders console (read). Requires perm "orders.read" (AC6).
 export async function GET(req: Request) {
-  const claims = await verifyAdminJwt(bearer(req) ?? "");
-  if (!claims) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  if (!claims.perms.includes("orders.read")) {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  }
+  const claims = await requirePerm(req, "orders.read");
+  if (claims instanceof NextResponse) return claims;
   const orders = await prisma.order.findMany({
     include: {
       items: true,

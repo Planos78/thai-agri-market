@@ -19,7 +19,7 @@ export default function AdminLogin() {
     const d = await res.json();
     if (!res.ok) return setMsg(d.error ?? "error");
     sessionStorage.setItem("adminToken", d.token);
-    router.push("/orders");
+    router.push("/admin/orders");
   }
 
   return (
