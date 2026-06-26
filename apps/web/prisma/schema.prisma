@@ -1,0 +1,264 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Identity / buyer
+// ---------------------------------------------------------------------------
+
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  name       String?
+  role       Role     @default(BUYER)
+  lineUserId String?  @unique
+  phone      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  orchards Orchard[]
+  orders   Order[]
+  reviews  Review[]
+}
+
+enum Role {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+// LINE user who has passed phone OTP verification. Gate for order creation.
+model VerifiedLineUser {
+  id         String   @id @default(uuid())
+  lineUserId String   @unique
+  phone      String
+  name       String?
+  consent    Boolean  @default(false)
+  verifiedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// OTP issuance/verification log. `reference` is the echo token returned to the client.
+model OtpLog {
+  reference  String    @id
+  phone      String
+  otp        String
+  lineUserId String?
+  expiresAt  DateTime
+  consumedAt DateTime?
+  deletedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([phone])
+}
+
+// ---------------------------------------------------------------------------
+// Catalog
+// ---------------------------------------------------------------------------
+
+model Orchard {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  province    String
+  ownerId     String
+  isVerified  Boolean  @default(false)
+  rating      Decimal  @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner User  @relation(fields: [ownerId], references: [id])
+  lots  Lot[]
+}
+
+model Lot {
+  id              String    @id @default(uuid())
+  orchardId       String
+  fruitName       String
+  variety         String?
+  grade           String?
+  price           Decimal
+  quantity        Int
+  unit            String    @default("kg")
+  minOrderQty     Int?
+  harvestDate     DateTime?
+  saleWindowStart DateTime?
+  saleWindowEnd   DateTime?
+  status          LotStatus @default(DRAFT)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  orchard    Orchard     @relation(fields: [orchardId], references: [id])
+  orderItems OrderItem[]
+}
+
+enum LotStatus {
+  DRAFT
+  ACTIVE
+  SOLD_OUT
+  CANCELLED
+}
+
+// ---------------------------------------------------------------------------
+// Orders + money
+// ---------------------------------------------------------------------------
+
+model Order {
+  id               String      @id @default(uuid())
+  orderNo          String      @unique
+  buyerId          String
+  subTotal         Decimal
+  feeAmount        Decimal     @default(0)
+  vatFeeAmount     Decimal     @default(0)
+  totalAmount      Decimal
+  transferAmount   Decimal?
+  status           OrderStatus @default(WAITING_PAYMENT)
+  shippingAddress  String
+  trackingNumber   String?
+  paymentExpiredAt DateTime?
+  paidAt           DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  buyer   User        @relation(fields: [buyerId], references: [id])
+  items   OrderItem[]
+  payment Payment?
+
+  callbackLogs PaymentCallbackLog[]
+}
+
+// Fruit order lifecycle.
+enum OrderStatus {
+  WAITING_PAYMENT
+  PAID
+  PREPARING
+  DELIVERED
+  CANCELLED
+  EXPIRED
+}
+
+model OrderItem {
+  id       String  @id @default(uuid())
+  orderId  String
+  lotId    String
+  quantity Int
+  price    Decimal
+
+  order Order @relation(fields: [orderId], references: [id])
+  lot   Lot   @relation(fields: [lotId], references: [id])
+}
+
+// Per-prefix running counter. Incremented under SELECT ... FOR UPDATE inside a
+// transaction to guarantee gap-free, collision-free order numbers (bug #2).
+model OrderRunningNo {
+  prefix     String   @id
+  yymmdd     String
+  lastNumber Int      @default(0)
+  updatedAt  DateTime @updatedAt
+}
+
+model Payment {
+  id           String        @id @default(uuid())
+  orderId      String        @unique
+  amount       Decimal
+  currency     String        @default("THB")
+  status       PaymentStatus @default(PENDING)
+  escrowStatus EscrowStatus  @default(HELD)
+  channel      String?
+  providerRef  String?
+  callbackRef  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum EscrowStatus {
+  HELD
+  RELEASED
+  REFUNDED
+}
+
+// Raw PSP callback audit log. FK to Order (bug #11: real FK, not loose string id).
+model PaymentCallbackLog {
+  id         String   @id @default(uuid())
+  orderId    String?
+  invoiceNo  String
+  amount     Decimal
+  respCode   String
+  respDesc   String?
+  tranRef    String?
+  signature  String?
+  rawPayload String
+  accepted   Boolean  @default(false)
+  receivedAt DateTime @default(now())
+
+  order Order? @relation(fields: [orderId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  userId    String
+  orchardId String?
+  orderId   String?
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// Admin RBAC (minimal)
+// ---------------------------------------------------------------------------
+
+model AdminUser {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  roleId       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  role AdminRole @relation(fields: [roleId], references: [id])
+}
+
+model AdminRole {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  users       AdminUser[]
+  permissions AdminRolePermission[]
+}
+
+model Permission {
+  id   String @id @default(uuid())
+  code String @unique // e.g. "orders.read"
+  name String
+
+  roles AdminRolePermission[]
+}
+
+model AdminRolePermission {
+  roleId       String
+  permissionId String
+
+  role       AdminRole  @relation(fields: [roleId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+}

@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blueprint Adaptation Roadmap — SCG Togo สู่ Thai Agri Market</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#161b22; --panel2:#1c2230; --line:#2b3340;
+    --ink:#e6edf3; --muted:#9aa7b4; --accent:#3fb950; --accent2:#58a6ff;
+    --keep:#2ea043; --adapt:#d29922; --drop:#f85149; --new:#a371f7;
+    --chip:#21262d;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Sarabun","Noto Sans Thai",Roboto,Helvetica,Arial,sans-serif;
+    font-size:15px; line-height:1.7;
+  }
+  .layout{display:flex; align-items:flex-start}
+  /* sidebar */
+  nav.toc{
+    position:sticky; top:0; height:100vh; overflow-y:auto;
+    width:300px; flex:0 0 300px; background:var(--panel);
+    border-right:1px solid var(--line); padding:22px 16px;
+  }
+  nav.toc h2{font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:0 0 12px}
+  nav.toc a{
+    display:block; color:var(--muted); text-decoration:none; padding:6px 10px;
+    border-radius:7px; font-size:13.5px; margin-bottom:2px; border-left:2px solid transparent;
+  }
+  nav.toc a:hover{background:var(--panel2); color:var(--ink)}
+  nav.toc a.sub{padding-left:22px; font-size:12.5px; color:#7d8995}
+  nav.toc .grp{margin-top:14px}
+  /* main */
+  main{flex:1 1 auto; min-width:0; padding:34px 46px 120px; max-width:1180px; margin:0 auto}
+  header.doc{border-bottom:1px solid var(--line); padding-bottom:20px; margin-bottom:30px}
+  header.doc h1{font-size:27px; margin:0 0 6px; line-height:1.3}
+  .meta{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:8px 22px; margin-top:14px; font-size:13.5px}
+  .meta b{color:var(--accent2)}
+  section{margin-bottom:46px; scroll-margin-top:14px}
+  h2.sec{font-size:21px; border-left:4px solid var(--accent); padding-left:12px; margin:0 0 16px}
+  h3{font-size:16.5px; color:var(--accent2); margin:26px 0 10px}
+  h4{font-size:14.5px; color:var(--ink); margin:18px 0 8px}
+  p{margin:10px 0}
+  code{background:var(--chip); padding:1.5px 6px; border-radius:5px; font-size:12.8px;
+    font-family:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace; color:#e3b341; white-space:nowrap}
+  table code{white-space:normal}
+  ul,ol{margin:10px 0; padding-left:22px}
+  li{margin:5px 0}
+  /* tables */
+  .tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:10px; margin:14px 0}
+  table{border-collapse:collapse; width:100%; font-size:13.3px}
+  th,td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+  th{background:var(--panel2); color:var(--ink); font-weight:600; position:sticky; top:0}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#12161d}
+  /* badges */
+  .b{display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; letter-spacing:.02em; white-space:nowrap}
+  .b.keep{background:rgba(46,160,67,.16); color:#56d364; border:1px solid rgba(46,160,67,.4)}
+  .b.adapt{background:rgba(210,153,34,.16); color:#e3b341; border:1px solid rgba(210,153,34,.4)}
+  .b.drop{background:rgba(248,81,73,.16); color:#ff7b72; border:1px solid rgba(248,81,73,.4)}
+  .b.new{background:rgba(163,113,247,.16); color:#d2a8ff; border:1px solid rgba(163,113,247,.4)}
+  .b.money{background:rgba(88,166,255,.16); color:#79c0ff; border:1px solid rgba(88,166,255,.4)}
+  .b.eff{background:var(--chip); color:var(--muted); border:1px solid var(--line)}
+  /* callouts */
+  .note{border:1px solid var(--line); border-left:4px solid var(--accent2); background:var(--panel);
+    border-radius:8px; padding:12px 16px; margin:16px 0}
+  .note.warn{border-left-color:var(--drop)}
+  .note.money{border-left-color:var(--accent2)}
+  .note .t{font-weight:700; margin-bottom:4px}
+  .mermaid{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px; margin:16px 0; text-align:center}
+  .pill{font-size:11px; padding:1px 7px; border-radius:5px; background:var(--chip); color:var(--muted); border:1px solid var(--line)}
+  .legend{display:flex; gap:14px; flex-wrap:wrap; margin:10px 0 0; font-size:12.5px; color:var(--muted)}
+  .legend span{display:inline-flex; align-items:center; gap:6px}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+  a.src{color:var(--accent2)}
+  hr{border:none;border-top:1px solid var(--line); margin:30px 0}
+  @media(max-width:880px){
+    nav.toc{display:none}
+    main{padding:22px 16px 80px}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="toc">
+  <h2>สารบัญ</h2>
+  <a href="#s1">1 · สรุปผู้บริหาร</a>
+  <a href="#s2">2 · สถาปัตยกรรม component</a>
+  <a href="#s3">3 · Data model (65→~30)</a>
+  <a href="#s3-1" class="sub">3.1 7 model ที่มี</a>
+  <a href="#s3-2" class="sub">3.2 Identity / RBAC</a>
+  <a href="#s3-3" class="sub">3.3 Master / catalog</a>
+  <a href="#s3-4" class="sub">3.4 Orders + เงิน</a>
+  <a href="#s3-5" class="sub">3.5 Logging / jobs</a>
+  <a href="#s4">4 · Workflow</a>
+  <a href="#s5">5 · Business rules</a>
+  <a href="#s6">6 · Integration</a>
+  <a href="#s7">7 · Frontend</a>
+  <a href="#s8">8 · Phase breakdown</a>
+  <a href="#s9">9 · Phase 1 (build-ready)</a>
+  <a href="#s10">10 · Open decisions</a>
+  <a href="#s11">11 · ความเสี่ยง & gotcha</a>
+  <a href="#sapp">ภาคผนวก · source map</a>
+  <div class="grp">
+    <h2>Legend</h2>
+    <div class="legend" style="flex-direction:column;gap:6px">
+      <span><span class="dot" style="background:#56d364"></span> keep</span>
+      <span><span class="dot" style="background:#e3b341"></span> adapt</span>
+      <span><span class="dot" style="background:#ff7b72"></span> drop</span>
+      <span><span class="dot" style="background:#d2a8ff"></span> ใหม่ (net-new)</span>
+      <span><span class="dot" style="background:#79c0ff"></span> money-critical</span>
+    </div>
+  </div>
+</nav>
+
+<main>
+<header class="doc">
+  <h1>Roadmap ปรับ Blueprint — SCG Togo สู่ Thai Agri Market</h1>
+  <p style="color:var(--muted);margin:4px 0 0">แบบแผนการทำงานฉบับละเอียด สำหรับ implement ระบบ marketplace ผลไม้โดยอิงโครงสร้างที่พิสูจน์แล้วของ SCG Togo</p>
+  <div class="meta">
+    <div><b>ประเภท</b> · Roadmap (เอกสารอ้างอิง ไม่ใช่ code)</div>
+    <div><b>วันที่</b> · 2026-06-26</div>
+    <div><b>Stakes</b> · Durable production build</div>
+    <div><b>Stack (อนุมัติแล้ว)</b> · Next.js + Prisma + Postgres</div>
+    <div><b>Customer surface v1</b> · LINE LIFF + Web checkout + Expo native</div>
+    <div><b>คู่กับ</b> · <a class="src" href="blueprint-adaptation-roadmap.md">blueprint-adaptation-roadmap.md</a></div>
+  </div>
+</header>
+
+<!-- ============ 1 ============ -->
+<section id="s1">
+  <h2 class="sec">1 · สรุปผู้บริหาร</h2>
+  <p>Blueprint ที่ <code>~/Downloads/blueprint/</code> คือเอกสารของ <b>SCG Togo / CPAC ToGo</b> — marketplace ขายคอนกรีตผสมเสร็จ (RMC) ที่ขึ้น production แล้ว ลูกค้าสั่งผ่าน LINE (PHP LIFF app) ระบบหาโรงงานที่ใกล้และผ่านเงื่อนไขที่สุด คิดราคาจาก pricelist ตามจังหวัด/วันที่/ระยะทาง/ประเภทรถ รับเงินผ่าน 2c2p แจ้งโรงงานผ่าน LINE Messaging ประสานการส่งพร้อมรูปยืนยัน แล้ว <b>จ่าย payout</b> ให้โรงงานหรือบริษัทแม่ CPAC หลังหักค่าธรรมเนียม 2% + VAT เป็นระบบ 4 ส่วน หลังบ้าน MySQL 65 ตาราง</p>
+  <p><b>ทำไม map กับ Thai Agri Market ได้:</b> ทั้งคู่เป็น managed marketplace ที่ platform ไม่ถือ stock — operator คัดสวน (= company/plant) เปิด lot ตาม harvest window (= product) รับเงิน แล้วจ่ายที่เหลือให้สวนหลังหักค่าธรรมเนียม แกนเงิน (order → escrow/hold → payout → refund), running-number กันชนกัน, order lifecycle, reschedule/adjust, รูปส่ง + review, RBAC admin, LINE LIFF + Messaging นำมาใช้ซ้ำตรงๆ ความต่างเชิงโครงสร้างคือ <b>logistics</b>: SCG Togo จับคู่โรงงานตามระยะทาง (geofence/30 กม. + Longdo) ส่วนเราเป็นผลไม้ต่างจังหวัดส่งโดย logistics partner เข้ากรุงเทพ — distance band, แบ่งคิวรถ, slump/strength/structure <b>ตัดทิ้งหมด</b></p>
+  <p><b>คำแนะนำหลัก:</b> ใช้ blueprint เป็น <b>เอกสารอ้างอิงเชิงพฤติกรรมและ data model ไม่ใช่ผู้บริจาค code</b> สร้างใหม่บน Next.js + Prisma + Postgres เก็บ pattern เงิน/concurrency/notification/RBAC ตัดทุกอย่างที่เป็น physics คอนกรีต ลำดับเป็น vertical slice บางก่อน (Phase 1) แล้วซ้อน fulfillment, settlement, surface สร้าง customer surface <b>ทีละตัว</b> (LIFF → web → Expo)</p>
+  <div class="note warn">
+    <div class="t">⚠ ข้อควรระวัง build-gate (เจ้าของตัดสิน — อย่าถือว่า override)</div>
+    <code>README.md</code> + vault <code>operator-master-plan.md</code> (Gate 4) ระบุว่า software build ถูก <b>block</b> จนกว่า: (1) ทำ paid drop เทียบกันได้ 3 ครั้ง, (2) เห็น paid repeat behavior, (3) contribution ระดับ lane เป็นบวกหลังหัก variable cost, (4) cash reconciliation ปิดได้, (5) วัด manual pain ซ้ำๆ ได้ — บวก Gate 0 (counsel, PSP, accountant, logistics SLA, ซ้อม pack/QC) <b>roadmap นี้คือแผนพร้อม build แต่ activate ก็ต่อเมื่อเจ้าของเคลียร์ gate เท่านั้น</b>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="s2">
+  <h2 class="sec">2 · Mapping สถาปัตยกรรม component</h2>
+  <p>4 deployable ของ blueprint ยุบเหลือ Next.js monorepo เดียว (<code>apps/web</code>) + Expo (<code>apps/mobile</code>) + worker webhook/push ภายใน "deferred engineering notes" ใน README (ข้อ 1-4) map ลงตรงรอยต่อแต่ละจุด</p>
+
+  <div class="mermaid">
+flowchart LR
+    subgraph Clients
+      C["ลูกค้า ใน LINE"]:::cli
+      O["staff สวน ใน LINE"]:::cli
+      A["admin (browser)"]:::cli
+    end
+    subgraph NextApp["apps/web (Next.js)"]
+      LIFF["(liff) LIFF web"]:::fe
+      SHOP["(shop) web checkout"]:::fe
+      ADMIN["(admin) dashboard"]:::fe
+      API["app/api/** route handlers + Prisma"]:::be
+      PUSH["api/internal/push/*"]:::be
+      WH["api/line/webhook"]:::be
+    end
+    DB[("Postgres")]:::db
+    EXPO["apps/mobile (Expo)"]:::fe
+    subgraph Ext["External (TBD)"]
+      PSP["PSP"]:::ext
+      LINE["LINE Messaging/LIFF"]:::ext
+      LOG["Logistics partner"]:::ext
+      SMS["SMS OTP"]:::ext
+    end
+    C-->LIFF-->API
+    A-->ADMIN-->API
+    SHOP-->API
+    EXPO-->API
+    API-->DB
+    API-->PUSH-->LINE
+    LINE-->WH-->API
+    API-->PSP
+    API-->LOG
+    API-->SMS
+    classDef cli fill:#1c2230,stroke:#3b4250,color:#e6edf3;
+    classDef fe fill:#13251a,stroke:#2ea043,color:#dff7e3;
+    classDef be fill:#152033,stroke:#58a6ff,color:#dbeafe;
+    classDef db fill:#241a13,stroke:#d29922,color:#ffe9c4;
+    classDef ext fill:#221327,stroke:#a371f7,color:#ecdcff;
+  </div>
+
+  <div class="tablewrap"><table>
+    <thead><tr><th>Component (blueprint)</th><th>Stack</th><th>เป้าหมาย Thai Agri Market</th><th>หมายเหตุ / บทเรียน deferred</th></tr></thead>
+    <tbody>
+      <tr><td><code>scg-togo-api</code> (Go REST :8005)</td><td>Go 1.23 / mux / MySQL</td><td><b>Next.js route handlers</b> ใต้ <code>apps/web/app/api/**</code> + Prisma + server action</td><td>Note 1: money state ครอบ <code>prisma.$transaction</code> · Note 3: callback PSP verify HMAC ก่อนเขียน DB</td></tr>
+      <tr><td><code>scg-togo-reactjs</code> (React 16 admin)</td><td>React/Saga/AntD/Firebase</td><td><b>Admin</b> = route group <code>(admin)/**</code> + RSC, gate RBAC</td><td>Firebase → provider ที่เลือก (§6) · permission catalog ขับเมนู</td></tr>
+      <tr><td><code>scg-togo-lineliff</code> (PHP LIFF)</td><td>PHP MVC</td><td><b>LIFF web</b> = route group <code>(liff)/**</code> + LIFF SDK</td><td>Note 2: client ไม่ self-assert <code>line_id</code>; server verify LINE ID token แทน scheme <code>MD5(line_id)</code> AES</td></tr>
+      <tr><td><code>scg-togo-linebot</code> (Go push+webhook)</td><td>Go / line-bot-sdk / state in-memory</td><td><b>Internal linebot</b> = <code>api/internal/push/**</code> + <code>api/line/webhook</code></td><td>Note 4: app ไม่ call LINE ตรง POST ไป internal · fire-and-forget (bug #5) → retry/queue · state ออกจาก singleton (bug #6)</td></tr>
+      <tr><td><span class="b new">ใหม่</span> Web checkout</td><td>—</td><td><code>(shop)/**</code></td><td>SCG Togo ไม่มี (LINE-only) ใช้ route order/payment ร่วมกับ LIFF</td></tr>
+      <tr><td><span class="b new">ใหม่</span> Expo native</td><td>—</td><td><code>apps/mobile</code> (Expo ~56)</td><td>กิน JSON API เดียวกัน ลำดับท้ายสุด</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><b>API เดียวรับหลาย surface</b> — แยก <code>app/api/admin/**</code> · <code>app/api/liff/**</code> · <code>app/api/interface/**</code> (callback) · <code>app/api/shop/**</code>; LIFF + shop ใช้ logic order/payment ร่วม</li>
+    <li><b>surface callback verify signature ไม่ใช่ JWT</b> — PSP (HMAC), LINE webhook (LINE signature) เป็นรอยต่อเสี่ยงสุด แยกให้ชัด</li>
+  </ul>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="s3">
+  <h2 class="sec">3 · Mapping data model <span class="pill">65 ตาราง → ~30 model</span></h2>
+  <p>Blueprint มี <b>65 ตาราง</b> + 1 หลัง dump (<code>saleorder_increase_payments</code>) schema ปัจจุบันมี <b>7 model</b>: <code>User</code>, <code>Orchard</code>, <code>Lot</code>, <code>Order</code>, <code>OrderItem</code>, <code>Payment</code> (มี <code>EscrowStatus</code>), <code>Review</code></p>
+
+  <h3 id="s3-1">3.1 · 7 model ที่มี → ทิศทาง</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Model</th><th>คู่ blueprint</th><th>ทิศทาง</th></tr></thead>
+    <tbody>
+      <tr><td><code>User</code></td><td><code>m_customers</code>+<code>m_users</code>+<code>verified_line_id</code></td><td><span class="b adapt">adapt+แยก</span> buyer (LINE) ต่างจาก admin (RBAC) — เก็บ <code>User</code> ให้ buyer, เพิ่ม <code>AdminUser</code> + RBAC + <code>VerifiedLineId</code>/consent</td></tr>
+      <tr><td><code>Orchard</code></td><td><code>m_companies</code>+<code>m_plants</code></td><td><span class="b adapt">adapt</span> ผลไม้ยุบ company+plant เป็น <code>Orchard</code> เดียว + relation บัญชี payout + <code>rating</code></td></tr>
+      <tr><td><code>Lot</code></td><td><code>m_products</code>+pricing</td><td><span class="b adapt">adapt</span> เพิ่ม harvest-window, grade, unit, min qty, QC state; ราคาต่อ-lot</td></tr>
+      <tr><td><code>Order</code></td><td><code>temp_saleorders</code>+<code>saleorders</code></td><td><span class="b adapt">adapt</span> เพิ่ม <code>orderNo</code>, lifecycle, expiry, column เงิน, temp/confirmed</td></tr>
+      <tr><td><code>OrderItem</code></td><td>line detail <code>saleorders</code></td><td><span class="b keep">keep</span> ผลไม้ cart หลาย lot จึงต้องการจริง (คอนกรีต 1 product/order)</td></tr>
+      <tr><td><code>Payment</code> (+<code>EscrowStatus</code>)</td><td>money cols + <code>payment_direct_logs</code> + payout + refund</td><td><span class="b money">money</span> <span class="b adapt">adapt</span> เดี่ยวบางไป ต้องมี payout + refund + raw-callback-log (3.4)</td></tr>
+      <tr><td><code>Review</code></td><td><code>company_reviews</code></td><td><span class="b adapt">adapt</span> เพิ่ม <code>orchardId</code>,<code>orderId</code>, คำนวณ <code>Orchard.rating</code> ตอน insert</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="s3-2">3.2 · Identity / RBAC / auth</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>ตาราง blueprint</th><th>ตัดสิน</th><th>เหตุผล</th><th>Model</th></tr></thead>
+    <tbody>
+      <tr><td><code>m_users</code></td><td><span class="b adapt">adapt</span></td><td>admin staff</td><td><code>AdminUser</code></td></tr>
+      <tr><td><code>m_usergroups</code>, <code>m_usergroup_has_user</code></td><td><span class="b keep">keep</span></td><td>จัดกลุ่ม role</td><td><code>Role</code>, <code>UserRole</code></td></tr>
+      <tr><td><code>m_permissions</code>, <code>m_usergroup_has_permissions</code></td><td><span class="b keep">keep</span></td><td>catalog ขับเมนู admin (ไม่มี=ไม่มีเมนู)</td><td><code>Permission</code>, <code>RolePermission</code></td></tr>
+      <tr><td><code>m_usergroup_has_companies</code>, <code>m_user_has_plants</code></td><td><span class="b adapt">adapt</span></td><td>scope ตาม orchard</td><td><code>RoleOrchardScope</code></td></tr>
+      <tr><td><code>blacklist_token</code></td><td><span class="b adapt">adapt</span>/<span class="b drop">drop</span></td><td>JWT revocation ขึ้นกับ provider</td><td><code>RevokedToken</code> (ถ้า self-issue JWT)</td></tr>
+      <tr><td><code>verified_line_id</code></td><td><span class="b keep">keep</span></td><td>gate การสั่ง (LINE verify เบอร์)</td><td><code>VerifiedLineUser</code></td></tr>
+      <tr><td><code>customer_consents</code>, <code>..._logs</code></td><td><span class="b adapt">adapt</span></td><td>PDPA consent (แทน OneTrust §6)</td><td><code>Consent</code>, <code>ConsentLog</code></td></tr>
+      <tr><td><code>otp_logs</code></td><td><span class="b keep">keep</span></td><td>ออก OTP เบอร์</td><td><code>OtpLog</code></td></tr>
+      <tr><td><code>plant_register_code</code></td><td><span class="b adapt">adapt</span></td><td>bind LINE สวน (แก้ varchar→FK, bug #10)</td><td><code>OrchardRegisterCode</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="s3-3">3.3 · Master / catalog</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>ตาราง blueprint</th><th>ตัดสิน</th><th>เหตุผล</th><th>เป้าหมาย</th></tr></thead>
+    <tbody>
+      <tr><td><code>m_companies</code></td><td><span class="b adapt">adapt</span></td><td>เจ้าของ/ผู้ขายสวน</td><td><code>Orchard</code>/<code>OrchardOwner</code></td></tr>
+      <tr><td><code>m_plants</code></td><td><span class="b adapt">adapt</span></td><td>แหล่งสวน; ตัด geofence/รัศมี/lead-time-ระยะ</td><td><code>Orchard</code> (lat/lng แค่โชว์)</td></tr>
+      <tr><td><code>m_products</code></td><td><span class="b adapt">adapt</span></td><td>→ ผลไม้ตามฤดู</td><td><code>Lot</code></td></tr>
+      <tr><td><code>m_product_types</code></td><td><span class="b adapt">adapt</span></td><td>ชนิด/พันธุ์</td><td><code>FruitType</code></td></tr>
+      <tr><td><code>m_strengths</code>,<code>m_slumps</code>,<code>m_product_structures</code>,<code>m_product_has_structures</code></td><td><span class="b drop">drop</span></td><td>physics คอนกรีต (กำลังอัด, slump, dump rate)</td><td>—</td></tr>
+      <tr><td><code>m_pricelists</code> + effective_dates + has_provinces + items</td><td><span class="b drop">drop matrix</span> <span class="b adapt">adapt window</span></td><td>matrix จังหวัด×วัน×ระยะ×รถ ยุบเหลือราคาต่อ-lot + window</td><td><code>Lot.price</code>, <code>Lot.saleWindowStart/End</code></td></tr>
+      <tr><td><code>m_delivery_distances</code></td><td><span class="b drop">drop</span></td><td>ไม่มี distance-band; logistics flat/quote</td><td>—</td></tr>
+      <tr><td><code>m_vehicle_types</code>, <code>m_vehicle_type_configs</code></td><td><span class="b drop">drop</span></td><td>ไม่มีแบ่งคิวรถ; แทนด้วย min order qty</td><td><code>Lot.minOrderQty</code></td></tr>
+      <tr><td><code>plant_has_products</code></td><td><span class="b drop">drop</span></td><td>junction ไม่มีคู่; lot สังกัด 1 orchard</td><td>—</td></tr>
+      <tr><td><code>m_operating_hours_templates</code> + detail + has_plants</td><td><span class="b drop">drop</span></td><td>ตารางเปิด-ปิด/ห้ามรถ; ผลไม้ใช้ harvest window</td><td>—</td></tr>
+      <tr><td><code>m_provinces</code></td><td><span class="b keep">keep</span></td><td>dropdown + พื้นที่ supply/delivery</td><td><code>Province</code> (seed)</td></tr>
+      <tr><td><code>m_sections</code></td><td><span class="b drop">drop</span></td><td>จัดกลุ่ม company; ไม่ต้องที่ scale pilot</td><td>—</td></tr>
+      <tr><td><code>m_banks</code></td><td><span class="b keep">keep</span></td><td>เลือกธนาคาร payout/refund</td><td><code>Bank</code> (seed)</td></tr>
+      <tr><td><code>m_faqs</code></td><td><span class="b keep">keep</span> (defer)</td><td>FAQ</td><td><code>Faq</code></td></tr>
+      <tr><td><code>vat_certificate_files</code></td><td><span class="b adapt">adapt</span> (defer)</td><td>เอกสารภาษีสวน (ถ้าจด VAT)</td><td><code>OrchardTaxDoc</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="s3-4">3.4 · Orders + เงิน <span class="b money">MONEY-CRITICAL</span></h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>ตาราง blueprint</th><th>ตัดสิน</th><th>เหตุผล</th><th>เป้าหมาย</th></tr></thead>
+    <tbody>
+      <tr><td><code>temp_saleorders</code></td><td><span class="b adapt">adapt</span></td><td>staging 1 ชม. → reservation hold</td><td><code>Order status=RESERVED</code>/<code>Reservation</code></td></tr>
+      <tr><td><code>saleorders</code></td><td><span class="b adapt">adapt</span></td><td>hub order + source-of-truth เงิน</td><td><code>Order</code> (+money cols)</td></tr>
+      <tr><td><code>saleorder_running_no</code></td><td><span class="b keep">keep</span></td><td>เลข order กันชน (<code>FOR UPDATE</code>, bug #2 preserve)</td><td><code>OrderRunningNo</code></td></tr>
+      <tr><td><code>customer_sitecode_logs</code></td><td><span class="b drop">drop</span></td><td>รหัสไซต์; ผลไม้ใช้ที่อยู่ส่ง</td><td>—</td></tr>
+      <tr><td><code>report_running_no</code></td><td><span class="b adapt">adapt</span> (defer)</td><td>เลขรายงาน</td><td><code>ReportRunningNo</code></td></tr>
+      <tr><td><code>saleorder_reschedules</code></td><td><span class="b adapt">adapt</span></td><td>เลื่อนวันส่ง (P/A/R)</td><td><code>DeliveryReschedule</code></td></tr>
+      <tr><td><code>saleorder_adjustments</code></td><td><span class="b adapt">adapt</span></td><td>ลด/เพิ่มจำนวน (P/A/R/C)</td><td><code>OrderAdjustment</code></td></tr>
+      <tr><td><code>saleorder_increase_payments</code></td><td><span class="b adapt">adapt</span></td><td>จ่ายเพิ่มตอนเพิ่มจำนวน</td><td><code>IncreasePayment</code></td></tr>
+      <tr><td><code>saleorder_refunds</code></td><td><span class="b money">money</span> <span class="b keep">keep</span></td><td>txn refund (full/partial)</td><td><code>Refund</code></td></tr>
+      <tr><td><code>delivery_orders</code>, <code>..._has_images</code></td><td><span class="b keep">keep</span></td><td>proof ส่ง + รูป (SFTP→object storage)</td><td><code>Delivery</code>, <code>DeliveryImage</code></td></tr>
+      <tr><td><code>company_reviews</code></td><td><span class="b adapt">adapt</span></td><td>rating → <code>Review</code> + recompute</td><td><code>Review</code></td></tr>
+      <tr><td><code>accounts</code>, <code>account_has_plants</code></td><td><span class="b money">money</span> <span class="b adapt">adapt</span></td><td>บัญชีธนาคาร payout สวน</td><td><code>PayoutAccount</code></td></tr>
+      <tr><td><code>payout_transactions</code>, <code>..._orders</code></td><td><span class="b money">money</span> <span class="b keep">keep</span></td><td>batch payout + link orders</td><td><code>PayoutBatch</code>, <code>PayoutBatchOrder</code></td></tr>
+      <tr><td><code>payout_responses</code>, <code>payout_error_logs</code></td><td><span class="b keep">keep</span></td><td>callback/error payout (เพิ่ม FK, bug #11)</td><td><code>PayoutResponse</code>, <code>PayoutErrorLog</code></td></tr>
+      <tr><td><code>payment_direct_logs</code></td><td><span class="b money">money</span> <span class="b keep">keep</span></td><td>audit raw callback payment</td><td><code>PaymentCallbackLog</code></td></tr>
+      <tr><td><code>m_payment_channels</code></td><td><span class="b adapt">adapt</span></td><td>วิธีจ่าย + fee (PSP-defined)</td><td><code>PaymentChannel</code></td></tr>
+      <tr><td>CPAC payout cols (<code>billing_cycle</code>...)</td><td><span class="b drop">drop</span></td><td>CPAC parent/franchise เฉพาะ SCG; ผลไม้ path เดียว</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note money">
+    <div class="t">💰 จุดเน้น money-critical</div>
+    <code>Payment</code>/<code>Refund</code>/<code>PayoutBatch</code>/<code>PayoutBatchOrder</code>/<code>PayoutAccount</code>/<code>PaymentCallbackLog</code>/<code>PayoutResponse</code> + money cols บน <code>Order</code> = แกนเงิน กฎ contract: <code>transfer_amount = total − platform_fee − platform_vat − refund</code> <b>ทุกการเขียนตรงนี้ต้องอยู่ใน <code>prisma.$transaction</code></b> · ห้ามเขียน code payout ก่อน legal/accounting review (§10)
+  </div>
+
+  <h3 id="s3-5">3.5 · Logging / notification / job</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>ตาราง</th><th>ตัดสิน</th><th>เหตุผล</th><th>เป้าหมาย</th></tr></thead>
+    <tbody>
+      <tr><td><code>noti_topic</code>, <code>noti_has_line</code></td><td><span class="b adapt">adapt</span> (defer)</td><td>list broadcast admin</td><td><code>NotiTopic</code>, <code>NotiSubscriber</code></td></tr>
+      <tr><td><code>liff_request_logs</code></td><td><span class="b adapt">adapt</span></td><td>audit request LIFF</td><td><code>LiffRequestLog</code></td></tr>
+      <tr><td><code>line_bot_logs</code></td><td><span class="b adapt">adapt</span></td><td>log bot</td><td><code>LineBotLog</code></td></tr>
+      <tr><td><code>cron_logs</code></td><td><span class="b keep">keep</span></td><td>dedup job/period (PK task+date)</td><td><code>CronLog</code></td></tr>
+      <tr><td><code>schedule_report</code></td><td><span class="b adapt">adapt</span> (defer)</td><td>config email-report</td><td><code>ScheduleReport</code></td></tr>
+    </tbody>
+  </table></div>
+  <p class="pill">สรุป: ~28-32 model เป้าหมาย vs 65 — ตัดราวครึ่ง (physics, matrix ราคา, operating hours, CPAC split, site code, section)</p>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="s4">
+  <h2 class="sec">4 · Mapping workflow</h2>
+  <div class="mermaid">
+sequenceDiagram
+    participant C as ลูกค้า (LIFF)
+    participant A as API (Next.js)
+    participant G as PSP
+    participant O as สวน (LINE)
+    participant L as Logistics
+    C->>A: browse lot, เลือก, ตั้งจำนวน+วันส่ง
+    C->>A: สร้าง order (hold 1h) → confirm
+    A->>G: init payment
+    G-->>A: callback (verify HMAC) → PAID
+    A->>O: แจ้งสวน "order ใหม่ ยืนยัน"
+    O->>A: confirm / เสนอ reschedule
+    A->>C: แจ้ง "สวน confirm, ส่งวัน X"
+    L->>A: delivery proof + รูป
+    A->>C: ขอ review (ดาว)
+    Note over A,G: รอบ payout → จ่ายสวน (ยอด − fee − vat − refund)
+  </div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Workflow blueprint</th><th>Flow ผลไม้</th><th>Status transition</th><th>Keep / change / drop</th></tr></thead>
+    <tbody>
+      <tr><td><b>Order flow</b></td><td>browse → reserve → confirm → pay</td><td><code>1 WaitForPayment→2 Paid</code>; expire <code>1→6</code></td><td><span class="b keep">keep</span> lifecycle+expiry+running-no · <span class="b drop">drop</span> nearest-plant/Longdo → browse-by-lot</td></tr>
+      <tr><td><b>payment-payout-refund</b></td><td>PSP → hold → payout สวน → refund</td><td>payout <code>P/S/F/C/W</code>; refund <code>P/S/F/C</code></td><td><span class="b keep">keep</span> แกนเงิน+fee · <span class="b drop">drop</span> CPAC billing-cycle · <span class="b adapt">adapt</span> escrow HELD/RELEASED/REFUNDED</td></tr>
+      <tr><td><b>adjust-volume</b></td><td>ปรับจำนวน (ลด→refund; เพิ่ม→จ่ายเพิ่ม)</td><td>adj <code>P/A/R/C</code>; inc-pay <code>P/S/E/C</code></td><td><span class="b keep">keep</span> ลด+เพิ่ม; volume→quantity, สวนอนุมัติ · <span class="b drop">drop</span> split_work</td></tr>
+      <tr><td><b>reschedule</b></td><td>สวนเสนอวันส่งใหม่, buyer ยืนยัน</td><td><code>P/A/R</code>; อนุมัติ→<code>3</code>; ปฏิเสธ→<code>5</code>+refund</td><td><span class="b keep">keep</span> trigger = harvest/logistics delay</td></tr>
+      <tr><td><b>delivery-review</b></td><td>logistics proof+รูป → buyer review</td><td><code>3 Prepare→4 Delivered</code></td><td><span class="b keep">keep</span> loop · <span class="b adapt">change</span> ผู้ upload: plant→logistics/CX</td></tr>
+      <tr><td><b>plant-registration</b></td><td>bind LINE สวน + onboard buyer (OTP+PDPA)</td><td>code→bind; OTP→<code>VerifiedLineUser</code></td><td><span class="b keep">keep</span> · แก้ FK (bug #10) · OneTrust→consent ง่ายกว่า</td></tr>
+      <tr><td><b>scheduled-jobs</b></td><td>sweep expiry, reminder, report, resend</td><td>guard <code>cron_logs</code></td><td><span class="b keep">keep</span> dedup+sweep · <span class="b adapt">redesign</span> serverless ใช้ cron trigger ไม่ใช่ <code>time.Ticker</code></td></tr>
+    </tbody>
+  </table></div>
+  <h4>Flow ที่ต้องออกแบบใหม่ <span class="b new">net-new</span> (ไม่มีคู่ blueprint)</h4>
+  <ul>
+    <li><b>QC release / lot hold-downgrade-split</b> (Flow 3) — human-gate; เพิ่ม <code>Lot.qcStatus</code> + audit sign-off</li>
+    <li><b>Packing checkpoint / manifest reconcile</b> (Flow 6) — นับ/label reconcile ก่อนส่งมือ logistics</li>
+    <li><b>Claim intake + triage</b> (Flow 7) — blueprint มีแต่ refund; เพิ่ม <code>Claim</code> + workflow + food-safety escalation</li>
+    <li><b>Reconciliation / variance</b> (Flow 8) — view cash-reconcile (gate variance ที่อธิบายไม่ได้ = 0)</li>
+  </ul>
+  <div class="note warn">
+    <div class="t">เส้นแบ่ง human-approval (vault)</div>
+    AI ทำได้: check field, flag mismatch, draft ข้อความ, classify claim ทั่วไป, match reference · <b>AI ห้ามอนุมัติ:</b> คุณสมบัติสวน, QC disposition, เปิด drop, refund, payout, food-safety, GO/REVISE/STOP — encode เป็น mutation human-only (ไม่มี path auto-approve)
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="s5">
+  <h2 class="sec">5 · Mapping business rules</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>#</th><th>กฎ blueprint</th><th>กฎผลไม้</th><th>Keep/drop</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Price resolution chain (plants-in-range → pricelist → effective → item → plant_has_products → nearest)</td><td>Lot ราคาต่อหน่วยตรงๆ ใน window</td><td><span class="b drop">drop chain</span> → <code>Lot.price</code> + active window</td></tr>
+      <tr><td>2</td><td><code>sub_total = volume*unit_price + delivery_fee</code>; min_order_fee/รถ; channel fee</td><td><code>subTotal = sum(qty*price) + deliveryFee</code>; <code>minOrderQty</code></td><td><span class="b keep">keep</span> total+channel fee · <span class="b drop">drop</span> truck min fee</td></tr>
+      <tr><td>3</td><td>Split work (ceil(vol/max)) + dump rate</td><td>—</td><td><span class="b drop">DROP ทั้งหมด</span></td></tr>
+      <tr><td>4</td><td>Plant search (geofence/30km + Longdo)</td><td>browse lot ตาม orchard/province</td><td><span class="b drop">drop</span> geofence/distance</td></tr>
+      <tr><td>5</td><td>Availability (operating-hours + lead time)</td><td>harvest-window + cutoff</td><td><span class="b drop">drop</span> template · <span class="b adapt">adapt</span> window</td></tr>
+      <tr><td>6</td><td>Running no <code>&lt;T/S&gt;+YYMMDD+3digit</code>, <code>FOR UPDATE</code></td><td>scheme เดียวกัน prefix ผลไม้</td><td><span class="b keep">KEEP</span> concurrency-critical</td></tr>
+      <tr><td>7</td><td>Expiry (temp/payment/increase = +1h)</td><td>hold 1 ชม.</td><td><span class="b keep">KEEP</span> (ปรับได้)</td></tr>
+      <tr><td>8</td><td>ID-card (<code>idcard_required Y/N</code>)</td><td>ID buyer optional (high-value/claim)</td><td><span class="b adapt">adapt</span> (defer)</td></tr>
+      <tr><td>9</td><td>Fees/VAT/payout (<code>fee=sub_total*0.02+VAT</code>; <code>transfer=total−fee−vat−refund</code>; franchise vs CPAC cycle)</td><td><code>fee=subTotal*take_rate</code>(10/12.5/15%)+VAT; path เดียว</td><td><span class="b keep">KEEP</span> โมเดล · <span class="b drop">drop</span> hardcode 2% + CPAC split</td></tr>
+      <tr><td>10</td><td>Review aggregation (recompute rating; 0.0→<code>(-)</code>)</td><td>recompute <code>Orchard.rating</code></td><td><span class="b keep">KEEP</span></td></tr>
+    </tbody>
+  </table></div>
+  <div class="note">
+    <div class="t">กฎผลไม้เพิ่ม (จาก vault)</div>
+    pricing cell take-rate/delivery/packaging/deposit ต้อง config ได้ ไม่ hardcode · tag ทุก order ด้วย fruit/orchard/lot/route/pack/wave/cohort/pricing-cell เพื่อ unit-economics (<code>platform_revenue</code>, <code>cm_pre_cac</code>, <code>cm_post_cac</code>, <code>drop_contribution</code>)
+  </div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="s6">
+  <h2 class="sec">6 · Mapping integration</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Integration blueprint</th><th>Thai Agri Market</th><th>Adopt/defer/replace</th></tr></thead>
+    <tbody>
+      <tr><td><b>2c2p</b> (payment+payout)</td><td>PSP (TBD: Omise/2C2P/PromptPay)</td><td><span class="b adapt">replace</span> เก็บรูป contract (init→pay→callback HMAC→Paid; payout key; refund=customer payout) ทำ adapter บางสลับได้</td></tr>
+      <tr><td><b>Longdo Map</b> (ระยะถนน)</td><td>Logistics partner (TBD)</td><td><span class="b drop">replace/drop</span> ไม่มี distance pricing; geofence spatial ตัด</td></tr>
+      <tr><td><b>Firebase</b> (admin auth)</td><td>auth provider (TBD)</td><td><span class="b adapt">replace</span> (Auth.js/NextAuth/hosted) เก็บ JWT+RBAC scoping</td></tr>
+      <tr><td><b>CPAC SMS</b> (OTP)</td><td>SMS/OTP (TBD)</td><td><span class="b adapt">replace</span> pattern <code>otp_logs</code>+reference+expiry สลับตัวส่ง</td></tr>
+      <tr><td><b>LINE LIFF</b></td><td>LINE LIFF</td><td><span class="b keep">adopt</span> platform · <span class="b adapt">เปลี่ยน auth</span>: server verify token + UUID id (ทิ้ง MD5/AES)</td></tr>
+      <tr><td><b>LINE Messaging</b></td><td>LINE Messaging</td><td><span class="b keep">adopt</span> internal push <code>{line_id,msg}</code>+catalog · decouple <code>/push/*</code> · retry/queue (bug #5)</td></tr>
+      <tr><td><b>OneTrust</b> (PDPA)</td><td>PDPA consent จัดเอง</td><td><span class="b adapt">replace</span> <code>Consent</code>/<code>ConsentLog</code> + privacy notice; counsel review ก่อน paid checkout</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="s7">
+  <h2 class="sec">7 · Mapping frontend</h2>
+  <h3>7.1 · Admin dashboard (~28 จอ)</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>กลุ่มจอ blueprint</th><th>เป้าหมาย</th><th>Phase</th></tr></thead>
+    <tbody>
+      <tr><td>Login, Users, Usergroups, Permissions, Profile</td><td>Admin auth + RBAC</td><td>P1 (auth), P5 (UI)</td></tr>
+      <tr><td>Sale orders (+detail/adjust/increase)</td><td>Orders console</td><td>P1 (อ่าน), P4 (adjust)</td></tr>
+      <tr><td>Customers / verified / consent</td><td>Buyer + consent</td><td>P2</td></tr>
+      <tr><td>Companies, Plants, Plant accounts, VAT</td><td>Orchard + payout + QC</td><td>P2, P5 (payout)</td></tr>
+      <tr><td>Products, Pricelist, Strength, Slump, Structure, Distance, Vehicle</td><td>Lot catalog</td><td>P2 — <span class="b drop">master คอนกรีตเกือบหมด DROP</span></td></tr>
+      <tr><td>Plant working hours</td><td>—</td><td><span class="b drop">DROP</span></td></tr>
+      <tr><td>Payment channel, Sections, Provinces, FAQ</td><td>Reference/config</td><td>P5 / defer</td></tr>
+      <tr><td>Revenue/Expense/Raw/WHT reports</td><td>Reports + reconciliation</td><td>P7</td></tr>
+      <tr><td><span class="b new">ใหม่</span> QC, Packing, Claims, Reconciliation</td><td>Console ops ผลไม้</td><td>P5-P7</td></tr>
+    </tbody>
+  </table></div>
+  <h3>7.2 · Customer surface (สร้างทีละตัว)</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>ขั้น journey</th><th>LIFF</th><th>Web</th><th>Expo</th><th>Phase</th></tr></thead>
+    <tbody>
+      <tr><td>welcome/register/otp/pdpa</td><td>✓</td><td>✓</td><td>✓</td><td>P3/P5/P6</td></tr>
+      <tr><td>map/nearby-factories/filter</td><td colspan="3"><span class="b drop">DROP (ไม่มี plant discovery)</span></td><td>—</td></tr>
+      <tr><td>product-list (browse lot)</td><td>✓</td><td>✓</td><td>✓</td><td>P1 (browse)</td></tr>
+      <tr><td>appointment/split-work</td><td colspan="3">เลือกวันส่ง · <span class="b drop">drop split-work</span></td><td>P4</td></tr>
+      <tr><td>confirm-order</td><td>✓</td><td>✓</td><td>✓</td><td>P1 (LIFF)</td></tr>
+      <tr><td>payment/qr/gateway</td><td>✓</td><td>✓</td><td>✓</td><td>P1 (LIFF)</td></tr>
+      <tr><td>order-history</td><td>✓</td><td>✓</td><td>✓</td><td>P3+</td></tr>
+      <tr><td>reschedule confirm</td><td>✓</td><td>✓</td><td>✓</td><td>P4</td></tr>
+      <tr><td>adjust/increase volume</td><td>✓</td><td>✓</td><td>✓</td><td>P4</td></tr>
+      <tr><td>confirm-delivery (รูป)</td><td>✓ (logistics/CX)</td><td>n/a</td><td>n/a</td><td>P4</td></tr>
+      <tr><td>review</td><td>✓</td><td>✓</td><td>✓</td><td>P4</td></tr>
+    </tbody>
+  </table></div>
+  <p class="pill">กฎลำดับ surface: LIFF ก่อน (P3) → web checkout (P5) → Expo (P6) · ทั้ง 3 กิน <code>app/api/**</code> เดียวกัน</p>
+</section>
+
+<!-- ============ 8 ============ -->
+<section id="s8">
+  <h2 class="sec">8 · Phase breakdown</h2>
+  <div class="mermaid">
+graph TD
+    P0["P0 เคลียร์ build-gate + ตัดสินใจ"] --> P1
+    P1["P1 vertical slice: data+auth+browse+order+pay"] --> P2
+    P2["P2 master/catalog: สวน,lot,QC,buyer,RBAC"] --> P3
+    P3["P3 LINE LIFF + messaging"] --> P4
+    P4["P4 fulfillment: reschedule,adjust,delivery,review"] --> P5
+    P4 --> P6
+    P5["P5 settlement: payout+refund+web checkout"] --> P7
+    P6["P6 Expo native + packing/claims"] --> P7
+    P7["P7 reports, reconciliation, jobs"]
+    classDef p fill:#152033,stroke:#58a6ff,color:#dbeafe;
+    class P0,P1,P2,P3,P4,P5,P6,P7 p;
+  </div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Phase</th><th>เป้าหมาย</th><th>Scope</th><th>Effort</th><th>ความเสี่ยง</th><th>Surface</th></tr></thead>
+    <tbody>
+      <tr><td><b>P0</b></td><td>ปลดล็อก+ตัดสิน</td><td>เคลียร์ build gate; ปิด open decision (§10); เลือก vendor</td><td><span class="b eff">S</span></td><td>build ก่อน gate = เสีย effort เปล่า</td><td>—</td></tr>
+      <tr><td><b>P1</b></td><td>vertical slice</td><td>data model (~12); LINE-verify+admin auth; browse lot; order (running-no, 1h, tx); PSP happy-path + HMAC</td><td><span class="b eff">L</span></td><td>money tx; PSP adapter; concurrency</td><td>LIFF (happy)</td></tr>
+      <tr><td><b>P2</b></td><td>master+catalog+QC</td><td>Orchard/Lot CRUD + harvest window; QC release/hold/downgrade; buyer+OTP+consent; RBAC</td><td><span class="b eff">L</span></td><td>QC ใหม่; RBAC scoping</td><td>LIFF (browse)</td></tr>
+      <tr><td><b>P3</b></td><td>channel LINE</td><td>LIFF journey เต็ม; push LINE catalog (retry/queue); webhook</td><td><span class="b eff">M</span></td><td>token verify; push reliability</td><td>LIFF (เต็ม)</td></tr>
+      <tr><td><b>P4</b></td><td>fulfillment</td><td>reschedule; adjust qty; delivery proof+รูป; review+rating</td><td><span class="b eff">L</span></td><td>reschedule→refund; inc-pay expiry</td><td>LIFF</td></tr>
+      <tr><td><b>P5</b></td><td>settlement+web</td><td>payout account+batch+refund (in tx); take-rate config; web checkout</td><td><span class="b eff">XL</span></td><td>money-critical; ต้อง legal sign-off; surface 2</td><td>Web</td></tr>
+      <tr><td><b>P6</b></td><td>native+ops</td><td>Expo native; packing/manifest; claim triage</td><td><span class="b eff">L</span></td><td>surface 3; claim/food-safety ใหม่</td><td>Expo</td></tr>
+      <tr><td><b>P7</b></td><td>reports+jobs</td><td>รายงาน; reconciliation/variance; cron jobs (sweep/reminder)</td><td><span class="b eff">M</span></td><td>cron serverless; ความแม่น reconcile</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>Dependency:</b> P1 = ฐานวิกฤต · P5 gate ด้วย legal/accounting review, เป็น XL เพราะ code เงินเสี่ยงสุด+surface ใหม่ · web (P5)/Expo (P6) จงใจไว้ท้าย เพื่อ validate channel เดียว (LIFF) ก่อน</p>
+</section>
+
+<!-- ============ 9 ============ -->
+<section id="s9">
+  <h2 class="sec">9 · Phase 1 — scope ละเอียด (พร้อม build)</h2>
+  <p><b>เป้าหมาย:</b> vertical slice พิสูจน์แกน end-to-end: buyer LINE ที่ verify → browse lot → สร้าง order (เลข order กันชน + hold 1h) → จ่าย PSP → callback verify HMAC พลิก order เป็น Paid ใน transaction</p>
+
+  <h3>9.1 · Prisma model เพิ่ม/แก้ <code>apps/web/prisma/schema.prisma</code></h3>
+  <ul>
+    <li><code>User</code> — เพิ่ม <code>lineUserId String? @unique</code>, <code>phone String?</code></li>
+    <li><code>VerifiedLineUser</code> <span class="b new">ใหม่</span> — <code>lineUserId @unique</code>, <code>phone</code>, <code>name</code>, consent, <code>verifiedAt</code> (gate การสั่ง)</li>
+    <li><code>OtpLog</code> <span class="b new">ใหม่</span> — <code>reference @id</code>, <code>phone</code>, <code>otp</code>, <code>expiresAt</code>, <code>deletedAt</code></li>
+    <li><code>Orchard</code> — เพิ่ม <code>rating Decimal @default(0)</code></li>
+    <li><code>Lot</code> — เพิ่ม <code>unit String</code>, <code>saleWindowStart/End DateTime?</code>, <code>minOrderQty Int?</code></li>
+    <li><code>Order</code> — เพิ่ม <code>orderNo @unique</code>, <code>subTotal</code>, <code>feeAmount</code>, <code>vatFeeAmount</code>, <code>transferAmount?</code>, <code>paymentExpiredAt?</code>, <code>paidAt?</code>; enum <code>WAITING_PAYMENT, PAID, PREPARING, DELIVERED, CANCELLED, EXPIRED</code></li>
+    <li><code>OrderRunningNo</code> <span class="b new">ใหม่</span> — <code>prefix</code>, <code>lastNumber</code>, <code>@@id([prefix])</code> · increment ใน <code>prisma.$transaction</code> ด้วย <code>$queryRaw SELECT ... FOR UPDATE</code> (preserve bug #2)</li>
+    <li><code>Payment</code> — เพิ่ม <code>channel?</code>, <code>callbackRef?</code>; <code>escrowStatus=HELD</code> ตอน paid</li>
+    <li><code>PaymentCallbackLog</code> <span class="b new">ใหม่</span> — <code>invoiceNo</code>, <code>amount</code>, <code>respCode</code>, <code>respDesc</code>, <code>tranRef</code>, raw payload, <code>receivedAt</code></li>
+    <li><code>AdminUser</code> + <code>Role</code>/<code>Permission</code> ขั้นต่ำ <span class="b new">ใหม่</span></li>
+  </ul>
+
+  <h3>9.2 · API route handlers <code>apps/web/app/api/**</code></h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Route</th><th>Method</th><th>map blueprint</th><th>จุดประสงค์</th></tr></thead>
+    <tbody>
+      <tr><td><code>liff/verify-line</code></td><td>POST</td><td>line-liff (note 2)</td><td>verify LINE ID token ฝั่ง server → <code>lineUserId</code></td></tr>
+      <tr><td><code>liff/otp</code></td><td>POST</td><td><code>/api/otp</code></td><td>ออก OTP, เขียน <code>OtpLog</code>, ส่ง SMS adapter</td></tr>
+      <tr><td><code>liff/otp/check</code></td><td>POST</td><td><code>/api/otp/check</code></td><td>verify OTP, upsert <code>VerifiedLineUser</code></td></tr>
+      <tr><td><code>liff/lots</code></td><td>GET</td><td><code>/liff/getproducts</code></td><td>list lot active (ไม่มี plant search/price chain)</td></tr>
+      <tr><td><code>liff/order</code></td><td>POST</td><td>create-temporder+confirm</td><td>gate verified, gen <code>orderNo</code> ใน tx, <code>paymentExpiredAt=now+1h</code>, คำนวณ subTotal+fee</td></tr>
+      <tr><td><code>liff/order/[id]/payment</code></td><td>POST</td><td><code>/liff/saleorder/{id}</code></td><td>คืน order+amount+init PSP</td></tr>
+      <tr><td><code>interface/payment/callback</code></td><td>POST</td><td>updatedirectpayment</td><td><b>verify HMAC</b>, เขียน <code>PaymentCallbackLog</code>, set PAID+HELD ทั้งหมดใน <code>$transaction</code></td></tr>
+      <tr><td><code>internal/push/[event]</code></td><td>POST</td><td>linebot /push/*</td><td>relay push เฉพาะภายใน (ไม่เรียก LINE ตรง)</td></tr>
+      <tr><td><code>admin/auth/login</code></td><td>POST</td><td>/auth/login</td><td>admin login (provider TBD)</td></tr>
+      <tr><td><code>admin/orders</code></td><td>GET</td><td>/saleorders</td><td>orders console (อ่าน), RBAC-scoped</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>9.3 · จอ (LIFF happy path)</h3>
+  <p><code>(liff)/welcome</code> → <code>(liff)/register</code>+<code>(liff)/otp</code> → <code>(liff)/lots</code> → <code>(liff)/order/confirm</code> → <code>(liff)/order/[id]/pay</code> · <code>(admin)/login</code>+<code>(admin)/orders</code></p>
+
+  <h3>9.4 · เกณฑ์ตรวจรับ</h3>
+  <ol>
+    <li>LINE user ไม่ verify สร้าง order ไม่ได้ (gate ฝั่ง server)</li>
+    <li><code>orderNo</code> = <code>&lt;prefix&gt;+YYMMDD+3digit</code> unique ภายใต้สร้างพร้อมกัน (hammer test, bug #2)</li>
+    <li>order ไม่จ่าย expire หลัง 1h → <code>EXPIRED</code></li>
+    <li>callback HMAC ผิด → reject, ไม่เขียน DB</li>
+    <li>callback ถูก → <code>Order=PAID</code>+<code>Payment=COMPLETED/HELD</code>+<code>PaymentCallbackLog</code> แบบ atomic</li>
+    <li>admin login เห็น order paid, RBAC-scoped</li>
+    <li>push LINE ยิงตอน payment สำเร็จ ผ่าน internal <code>/push/*</code></li>
+  </ol>
+
+  <h3>9.5 · ไฟล์/module ที่แตะ</h3>
+  <ul>
+    <li><code>apps/web/prisma/schema.prisma</code> + migration</li>
+    <li><code>apps/web/app/api/{liff,interface,internal,admin}/**</code></li>
+    <li><code>apps/web/app/(liff)/**</code> + <code>apps/web/app/(admin)/**</code></li>
+    <li><code>apps/web/lib/</code> — ใหม่: <code>psp/</code>, <code>line/</code> (verify+push), <code>hmac.ts</code>, <code>order-no.ts</code>, <code>db.ts</code></li>
+    <li><b>ห้ามแตะ</b> <code>apps/mobile</code> ใน P1</li>
+  </ul>
+  <div class="note warn">
+    <div class="t">⚠ Next.js version drift</div>
+    <code>apps/web/AGENTS.md</code>: Next.js นี้ (16.2.9 + React 19) ต่างจาก training data — อ่าน <code>node_modules/next/dist/docs/</code> ก่อนเขียน route handler/server action
+  </div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="s10">
+  <h2 class="sec">10 · Open decision สำหรับเจ้าของ</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>#</th><th>การตัดสินใจ</th><th>บริบท</th><th>บล็อก</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><b>Override build-gate</b></td><td>block (README+Gate 4): 3 paid drop+repeat+contribution+reconcile+manual pain + Gate 0 (counsel/PSP/accountant/logistics/QC)</td><td>roadmap dormant จนเคลียร์ · <b>เจ้าของเท่านั้น</b></td></tr>
+      <tr><td>2</td><td><b>PSP provider</b></td><td>Omise/2C2P/PromptPay หลัง PSP+counsel review</td><td>P1 payment + P5 payout</td></tr>
+      <tr><td>3</td><td><b>Logistics partner</b></td><td>delivery proof, cutoff, SLA, evidence field (Gate 0)</td><td>P4 delivery + P6 packing</td></tr>
+      <tr><td>4</td><td><b>Escrow/payout v1</b></td><td>vault ห้าม self-held escrow; PSP hold-then-payout หรือเลื่อน settle manual?</td><td>code payout P5 build v1 ไหม</td></tr>
+      <tr><td>5</td><td><b>Admin auth provider</b></td><td>Firebase→TBD (Auth.js/NextAuth/hosted)</td><td>P1 admin auth</td></tr>
+      <tr><td>6</td><td><b>Encryption/LIFF-link compat</b></td><td>blueprint <code>AES-GCM</code>/<code>MD5(line_id)</code>; greenfield → <b>clean break</b> (token verify + UUID)</td><td>P1 LIFF auth</td></tr>
+      <tr><td>7</td><td><b>PDPA/consent</b></td><td>OneTrust→<code>Consent</code>/<code>ConsentLog</code>+notice; PDPA ไทยยังบังคับ</td><td>onboard P2/P3; Gate 0</td></tr>
+      <tr><td>8</td><td><b>Take-rate config</b></td><td>blueprint 2% hardcode; vault test 10/12.5/15%; VAT กับ accountant</td><td>fee P5</td></tr>
+      <tr><td>9</td><td><b>Money/legal review</b></td><td>Gate 0: PSP+accountant+Thai counsel review money flow ก่อน paid checkout</td><td>P5 (และ P1 payment)</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ 11 ============ -->
+<section id="s11">
+  <h2 class="sec">11 · ความเสี่ยง & gotcha</h2>
+  <h3>11.1 · จาก 15 known bug ของ blueprint ที่ใช้กับ build ใหม่</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Bug</th><th>ใช้?</th><th>การกระทำ</th></tr></thead>
+    <tbody>
+      <tr><td>#2 order-no ต้อง <code>FOR UPDATE</code></td><td>✓</td><td><b>Preserve</b> lock · <code>$queryRaw FOR UPDATE</code> ใน tx · hammer-test</td></tr>
+      <tr><td>#5 push fire-and-forget</td><td>✓</td><td><b>Fix</b> retry/queue มี status</td></tr>
+      <tr><td>#1 Longdo คืน 0.0</td><td>✗</td><td>N/A (ตัด distance)</td></tr>
+      <tr><td>#3 decrypt order id ด้วย line_id</td><td>✗</td><td>clean break → UUID + token verify</td></tr>
+      <tr><td>#4 plant line_id null เงียบ</td><td>✓ (orchard)</td><td><b>Fix</b> เตือน/บล็อกตอน register สวน</td></tr>
+      <tr><td>#6 bot state singleton</td><td>อาจ</td><td>state ใน DB (serverless ไม่มี memory ถาวร)</td></tr>
+      <tr><td>#10 plant_id varchar vs int</td><td>✓ (orchard)</td><td><b>Fix</b> FK ถูกต้องแต่แรก</td></tr>
+      <tr><td>#11 payout/payment log ไม่มี FK</td><td>✓</td><td><b>Fix</b> เพิ่ม FK จริง</td></tr>
+      <tr><td>#14 CORS AllowAll</td><td>✓</td><td><b>Fix</b> ล็อก origin prod แต่แรก</td></tr>
+      <tr><td>#15 admin resend disabled</td><td>ตัดสิน</td><td>เปิด resend reminder ไหม (P4/P7)</td></tr>
+      <tr><td>#7 image endpoint binary</td><td>minor</td><td>object storage URL; เก็บ path/URL</td></tr>
+      <tr><td>#8/#9/#12/#13</td><td>N/A</td><td>greenfield เลี่ยง; เพิ่ม <code>IncreasePayment</code> ตอน P4</td></tr>
+    </tbody>
+  </table></div>
+  <h3>11.2 · ความเสี่ยง domain-mismatch + build ใหม่</h3>
+  <ul>
+    <li><b>Cron serverless</b> — Next.js/Vercel ไม่มี process รันยาว ใช้ Vercel Cron/scheduled function; เก็บ dedup <code>cron_logs</code> (idempotency) · sweep expiry ต้องใช้ตั้งแต่ P1</li>
+    <li><b>Money atomicity</b> — README note 1 สำคัญสุด: ครอบทุก money state ด้วย <code>prisma.$transaction</code> · drift = สูญเงินจริง</li>
+    <li><b>HMAC callback seam</b> — PSP/LINE callback เป็น surface เดียวไม่ auth JWT · signature check หาย/หลวม = ช่อง exploit · verify ก่อน read/write</li>
+    <li><b>Multi-lot cart</b> — ผลไม้ต้อง <code>OrderItem</code> หลาย lot · refund/adjust เป็นราย-item · ออกแบบที่ grain item แต่แรก</li>
+    <li><b>QC/claim/reconciliation = net-new</b> — blueprint ไม่มีคู่ อย่า force-fit · human-gate · หัวใจ operation ผลไม้ · เผื่อเวลาออกแบบ (P2/P6/P7)</li>
+    <li><b>ไม่มี CPAC/franchise split, แบ่งคิวรถ, distance band</b> — ต้านการ copy; เพิ่มความซับซ้อนโดยไม่มีค่าผลไม้</li>
+  </ul>
+</section>
+
+<!-- ============ APP ============ -->
+<section id="sapp">
+  <h2 class="sec">ภาคผนวก · source map</h2>
+  <ul>
+    <li><b>Blueprint:</b> <code>~/Downloads/blueprint/{00..11}</code></li>
+    <li><b>Repo เป้าหมาย:</b> <code>README.md</code>, <code>apps/web/prisma/schema.prisma</code>, <code>apps/web/package.json</code>, <code>apps/mobile/package.json</code>, <code>apps/web/AGENTS.md</code></li>
+    <li><b>Vault:</b> <code>MY VAULT/wiki/syntheses/thai-agri-market/{operator-master-plan,business-flows,stack}.md</code></li>
+  </ul>
+  <hr>
+  <p style="color:var(--muted);font-size:12.5px">เอกสารนี้ generate จาก <a class="src" href="blueprint-adaptation-roadmap.md">blueprint-adaptation-roadmap.md</a> · ปรับแก้ที่ไฟล์ .md เป็นหลักแล้ว sync มาที่ HTML · 2026-06-26</p>
+</section>
+
+</main>
+</div>
+
+<script>
+  mermaid.initialize({startOnLoad:true, theme:'dark', securityLevel:'loose',
+    themeVariables:{fontFamily:'-apple-system,Sarabun,sans-serif', fontSize:'14px'}});
+  // scrollspy
+  const links=[...document.querySelectorAll('nav.toc a[href^="#"]')];
+  const map=new Map(links.map(a=>[a.getAttribute('href').slice(1),a]));
+  const obs=new IntersectionObserver((es)=>{
+    es.forEach(e=>{ if(e.isIntersecting){
+      links.forEach(l=>l.style.cssText='');
+      const a=map.get(e.target.id);
+      if(a){a.style.background='var(--panel2)';a.style.color='var(--ink)';a.style.borderLeft='2px solid var(--accent)';}
+    }});
+  },{rootMargin:'-10% 0px -80% 0px'});
+  document.querySelectorAll('section[id]').forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

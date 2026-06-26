@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thai Agri Market - Enterprise Architecture & Competitor Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: 'Prompt, sans-serif'
+        });
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+        .mermaid { display: flex; justify-content: center; margin: 2rem 0; background-color: white; padding: 2rem; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow-x: auto;}
+        h2 { scroll-margin-top: 5rem; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen">
+    
+    <!-- Navbar / TOC -->
+    <nav class="bg-green-800 text-white sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0 font-bold text-xl">
+                    🇹🇭 Thai Agri Market
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#b2c-domestic" class="hover:bg-green-700 px-3 py-2 rounded-md text-sm font-medium">1. B2C ในประเทศ</a>
+                        <a href="#revenue-gp" class="hover:bg-green-700 px-3 py-2 rounded-md text-sm font-medium">2. โมเดลรายได้</a>
+                        <a href="#traceability" class="hover:bg-green-700 px-3 py-2 rounded-md text-sm font-medium">3. Blockchain</a>
+                        <a href="#architecture" class="hover:bg-green-700 px-3 py-2 rounded-md text-sm font-medium">4. สถาปัตยกรรม</a>
+                        <a href="#competitors" class="bg-yellow-600 hover:bg-yellow-500 px-3 py-2 rounded-md text-sm font-medium">5. วิเคราะห์คู่แข่ง</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+        
+        <div class="mb-12 text-center">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">เอกสารการออกแบบระบบเชิงธุรกิจ (Business Blueprint)</h1>
+            <p class="text-lg text-gray-600">เจาะลึกกระบวนการซื้อขาย, โมเดลรายได้, สถาปัตยกรรมระบบ และการวิเคราะห์คู่แข่งในตลาด (Competitive Analysis)</p>
+        </div>
+
+        <!-- Section 1 -->
+        <section id="b2c-domestic" class="mb-16">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-4 border-green-600 pb-2">1. กระบวนการซื้อขายสำหรับลูกค้าในประเทศ (B2C Domestic Flow)</h2>
+            <p class="mb-4 text-gray-600">ตอบโจทย์คนอยู่คอนโดหรือบ้านที่ไม่สะดวกไปตลาดสด สามารถสั่งผลไม้สดตรงจากสวน โดยแพลตฟอร์มจะรวมค่าส่งอัตโนมัติและให้ขนส่งไปรับถึงหน้าสวน</p>
+            <div class="mermaid">
+sequenceDiagram
+    participant B as ผู้ใช้แอป (ลูกค้าในประเทศ)
+    participant Sys as ระบบ Thai Agri Market
+    participant F as เกษตรกร/เจ้าของสวน
+    participant L as ระบบขนส่งด่วน (Kerry/Flash)
+
+    B->>Sys: 1. ค้นหาผลไม้, อ่านรีวิว, กดใส่ตะกร้า
+    Sys->>Sys: 2. คำนวณค่าส่งจากระยะทาง (API ขนส่ง)
+    B->>Sys: 3. ชำระเงิน (PromptPay / บัตรเครดิต) รวมค่าส่ง
+    
+    Sys->>F: 4. แจ้งเตือนออเดอร์เข้า
+    F->>Sys: 5. แพ็คผลไม้ลงกล่อง & พิมพ์ใบปะหน้าจากแอป
+    Sys->>L: 6. API สั่งเรียกรถกระบะไปรับที่สวน (Pickup)
+    
+    L->>F: 7. เข้ารับพัสดุที่หน้าสวน
+    L->>Sys: 8. อัปเดตสถานะ Tracking แบบ Real-time
+    Sys->>B: 9. ส่ง Push Notification แจ้งสถานะสินค้า
+    
+    L->>B: 10. นำส่งผลไม้สดถึงหน้าบ้าน
+    B->>Sys: 11. กดยืนยันรับของ & ให้คะแนนดาวสวน
+            </div>
+        </section>
+
+        <!-- Section 2 -->
+        <section id="revenue-gp" class="mb-16">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-4 border-green-600 pb-2">2. โมเดลรายได้และการหัก GP (Payment & GP Split Flow)</h2>
+            <p class="mb-4 text-gray-600">เมื่อมีการซื้อขายเกิดขึ้น เงินจะถูกพักไว้ที่ระบบส่วนกลาง (Escrow) และระบบจะทำการหักค่าใช้จ่ายทั้งหมดอัตโนมัติก่อนโอนเข้าบัญชีชาวสวนเมื่อจบงาน</p>
+            <div class="mermaid">
+flowchart TD
+    A["ลูกค้าจ่ายเงิน 1,100 บาท<br/>(ค่าทุเรียน 1,000 + ค่าส่ง 100)"] --> B["เงินเข้าบัญชีพักของแพลตฟอร์ม<br/>(Escrow Account)"]
+    
+    B -->|"ลูกค้ายืนยันรับของ"| C{"ระบบคำนวณส่วนแบ่งอัตโนมัติ<br/>(Smart Split Routing)"}
+    
+    C -->|"ค่าผลไม้ (หลังหัก GP 10%)<br/>900 บาท"| D["โอนเข้าบัญชีชาวสวน"]
+    C -->|"ค่าธรรมเนียม GP<br/>100 บาท"| E["รายได้ของ แพลตฟอร์ม (Revenue)"]
+    C -->|"ค่าขนส่ง<br/>100 บาท"| F["จ่ายให้บริษัทขนส่ง (Kerry/Flash)"]
+    C -->|"ค่าธรรมเนียมบัตร/PromptPay<br/>(Payment Gateway Fee)"| G["จ่ายให้ Omise/Stripe"]
+            </div>
+        </section>
+
+        <!-- Section 3 -->
+        <section id="traceability" class="mb-16">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-4 border-green-600 pb-2">3. บทบาทของ Blockchain ในระบบ (Data Traceability)</h2>
+            <p class="mb-4 text-gray-600">Blockchain ถูกนำมาใช้เป็น <b>"สมุดจดบันทึกที่แก้ไขไม่ได้ (Immutable Ledger)"</b> เพื่อรับรองมาตรฐานผลไม้ให้ต่างชาติและลูกค้าในประเทศมั่นใจ</p>
+            <div class="mermaid">
+flowchart LR
+    subgraph Blockchain_Ledger ["เครือข่าย Blockchain (บันทึกข้อมูลอย่างเดียว)"]
+        Block1["บันทึก #1: รหัสแปลง GAP ของสวน"] --> Block2["บันทึก #2: วันที่และเวลาเก็บเกี่ยว"]
+        Block2 --> Block3["บันทึก #3: รูปถ่าย QC ก่อนลงกล่อง"]
+        Block3 --> Block4["บันทึก #4: อุณหภูมิระหว่างขนส่ง (จากตู้คอนเทนเนอร์)"]
+    end
+    
+    subgraph Data_Consumers ["ผู้อ่านข้อมูล"]
+        B2C["ลูกค้าคนไทย สแกน QR Code หน้ากล่อง<br/>(เพื่อดูที่มาว่ามาจากสวนไหน)"]
+        B2B["ผู้ซื้อต่างชาติ / ศุลกากร<br/>(ตรวจสอบมาตรฐาน GAP และสุขอนามัยพืชก่อนนำเข้า)"]
+    end
+
+    Block4 --> B2C
+    Block4 --> B2B
+            </div>
+        </section>
+
+        <!-- Section 4 -->
+        <section id="architecture" class="mb-16">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-4 border-green-600 pb-2">4. สถาปัตยกรรมระบบนิเวศระดับชาติ (National Ecosystem Architecture)</h2>
+            <p class="mb-4 text-gray-600">โครงสร้างภาพรวมที่เชื่อมโยงผู้ซื้อ ผู้ขาย และระบบของหน่วยงานต่างๆ</p>
+            <div class="mermaid">
+flowchart TD
+    subgraph Client_Layer ["ส่วนติดต่อผู้ใช้งาน"]
+        B_App["แอปผู้ซื้อ (App/Web)<br/>คนไทย และ ต่างชาติ"]
+        F_App["แอปชาวสวน<br/>จัดการสต็อก/รับออเดอร์"]
+        A_Web["ระบบหลังบ้าน Admin"]
+    end
+
+    subgraph API_Gateway ["API Gateway & Load Balancer"]
+        Gateway["จัดการ ทราฟฟิก"]
+    end
+
+    subgraph Core_Microservices ["ระบบ Microservices หลัก"]
+        Ord["จัดการออเดอร์ (Order)"]
+        Pay["จัดการเงินและแบ่ง GP (Split Payment)"]
+        Inv["คลังสินค้า (Inventory)"]
+        Track["บันทึกประวัติ (Blockchain Traceability)"]
+    end
+
+    subgraph AI_IoT_Layer ["ชั้น AI & IoT"]
+        ColdChain["เซ็นเซอร์อุณหภูมิรถบรรทุก"]
+        AI_Vision["AI ตรวจสอบรูปภาพผลไม้มีตำหนิ"]
+    end
+
+    subgraph External_Partners ["พาร์ทเนอร์และรัฐบาล"]
+        DOA["กรมวิชาการเกษตร (GAP/Phyto)"]
+        Logistics["ผู้ให้บริการขนส่ง (Kerry/Flash/DHL)"]
+        PaymentGW["ระบบจ่ายเงิน (Omise/Stripe)"]
+    end
+
+    B_App --> Gateway
+    F_App --> Gateway
+    A_Web --> Gateway
+
+    Gateway --> Ord
+    Gateway --> Pay
+    Gateway --> Inv
+    Gateway --> Track
+
+    ColdChain --> Track
+    AI_Vision --> Ord
+
+    Track <--> DOA
+    Ord <--> Logistics
+    Pay <--> PaymentGW
+            </div>
+        </section>
+
+        <!-- Section 5 -->
+        <section id="competitors" class="mb-16">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-4 border-yellow-500 pb-2">5. การวิเคราะห์คู่แข่งในตลาด (Competitive Analysis)</h2>
+            <p class="mb-6 text-gray-600">จากการวิจัยตลาดเชิงลึก นี่คือผู้เล่นหลักในอุตสาหกรรมผลไม้และการเกษตรของไทย และวิธีที่ Thai Agri Market จะสร้างความได้เปรียบที่พวกเขาทำตามได้ยาก (Moat)</p>
+
+            <div class="overflow-x-auto bg-white rounded-lg shadow">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">คู่แข่งหลัก (Competitor)</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">จุดแข็งของเขา (Strengths)</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">จุดอ่อนของเขา (Weaknesses)</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">ไม้ตายของเรา (Our Advantage)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <!-- Competitor 1 -->
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-l-4 border-red-500">
+                                1. ตลาดไท (Talaadthai) <br><span class="text-xs text-gray-500">รวมถึงเว็บ Talaadthai Select</span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                - เป็นศูนย์กลางค้าส่งระดับประเทศ<br>
+                                - มีสินค้าเยอะ ราคาหน้าสวนจริง<br>
+                                - มีสาธารณูปโภคครอบคลุม 24 ชม.
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                - ไม่โฟกัสลูกค้า End-User (B2C คนรุ่นใหม่)<br>
+                                - ตรวจสอบย้อนกลับถึงต้นไม้ได้ยาก<br>
+                                - การสั่งซื้อออนไลน์ยังเป็น B2B ซะส่วนใหญ่
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900 bg-green-50">
+                                <b>Direct-to-Consumer (D2C):</b> เราออกแบบแอปให้ใช้งานง่ายเหมือน Shopee ตอบโจทย์คนอยากซื้อกินเอง ไม่ต้องซื้อยกลัง พร้อม <b>Blockchain Traceability</b> ระบุได้ว่าผลไม้ลูกนี้มาจากสวนไหน
+                            </td>
+                        </tr>
+                        <!-- Competitor 2 -->
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-l-4 border-orange-500">
+                                2. Freshket / Go Wholesale
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                - แข็งแกร่งเรื่องส่งวัตถุดิบเข้าร้านอาหาร<br>
+                                - ระบบ Logistics และ Cold Chain ดีเยี่ยม<br>
+                                - บริหาร Supply Chain ได้แม่นยำ
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                - โฟกัสไปที่ผัก/วัตถุดิบทำอาหารเป็นหลัก<br>
+                                - ผลไม้พรีเมียม/ผลไม้ตามฤดูกาลยังมีน้อย<br>
+                                - ไม่ได้เชื่อมต่อโดยตรงเพื่อช่วยแบรนดิ้งให้สวน
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900 bg-green-50">
+                                <b>Seasonal Focus & Farm Branding:</b> เราเชิดชูแบรนด์ของสวน (Orchard Profiling) ให้ลูกค้าได้ผลไม้ตามฤดูกาลจริงๆ พร้อมเรื่องราว (Storytelling) ไม่ใช่วัตถุดิบไร้ชื่อ
+                            </td>
+                        </tr>
+                        <!-- Competitor 3 -->
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-l-4 border-orange-500">
+                                3. Shopee / Lazada / TikTok Shop
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                - คนคุ้นเคยกับแอป<br>
+                                - มีระบบจ่ายเงิน/Escrow ที่แข็งแกร่ง<br>
+                                - มีโค้ดส่งฟรีเยอะ
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                - ระบบสร้างมาขายเสื้อผ้า/ของใช้ ไม่ใช่ของสด<br>
+                                - ระบบขนส่งมาตรฐานทำของสดช้ำ/พัง<br>
+                                - กระบวนการเคลมคืนเงิน (Dispute) ไม่รองรับของเน่าเสีย
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900 bg-green-50">
+                                <b>Agri-Specific Logistics & AI Dispute:</b> แพลตฟอร์มเราบังคับเชื่อมขนส่งผลไม้โดยเฉพาะ (Cold Chain/Next Day) และใช้ AI ช่วยตัดสินข้อพิพาทเมื่อของเสีย ทำให้แฟร์ทั้งคนซื้อคนขาย
+                            </td>
+                        </tr>
+                        <!-- Competitor 4 -->
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-l-4 border-blue-500">
+                                4. สวนผลไม้ขายตรงผ่าน Facebook / LINE
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                - เข้าถึงลูกค้าได้โดยตรงและมีความเป็นกันเอง<br>
+                                - ได้รับเงินเต็มๆ ไม่เสีย GP ให้ใคร
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                - ลูกค้าต้องโอนเงินก่อน (เสี่ยงโดนโกง/ผลไม้อ่อน)<br>
+                                - จัดการออเดอร์หลังบ้านและระบบแชทวุ่นวาย<br>
+                                - ขยายตลาดต่างประเทศ (Export) ทำเองไม่ได้
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900 bg-green-50">
+                                <b>Trust & Automation:</b> เรามีระบบ Escrow ถือเงินให้ลูกค้าสบายใจ และมีหลังบ้านช่วยปริ้นใบปะหน้า+ส่งออกให้ สวนมีหน้าที่แค่แพ็คของ ไม่ต้องเหนื่อยตอบแชท
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-8 bg-green-50 p-6 rounded-lg border border-green-200">
+                <h3 class="text-xl font-bold text-green-800 mb-3">🎯 บทสรุปการสร้างความได้เปรียบ (Strategic Summary)</h3>
+                <p class="text-gray-700 leading-relaxed">
+                    ตลาดผลไม้ไทยมีผู้เล่นรายใหญ่ที่เป็น <b>"ตลาดค้าส่งกายภาพ (Physical Wholesale)"</b> เช่น ตลาดไท และ <b>"แพลตฟอร์ม e-Commerce ทั่วไป"</b> เช่น Shopee อย่างไรก็ตาม ยังเกิดช่องว่างขนาดใหญ่ (Blue Ocean) สำหรับ <b>"ตลาดสดออนไลน์สำหรับเกษตรกรรมโดยเฉพาะ (Vertical Agri-Marketplace)"</b> 
+                </p>
+                <p class="text-gray-700 leading-relaxed mt-2">
+                    คู่แข่งไม่สามารถก๊อปปี้ระบบนี้ได้ในวันเดียว เพราะ <b>Thai Agri Market</b> ไม่ได้แค่ทำแอปให้คนมากดซื้อ แต่เราสร้างระบบนิเวศ (Ecosystem) ที่ประกอบด้วย: <br/>
+                    1. <b>การเชื่อม API ขนส่งควบคุมอุณหภูมิ (Agri-Logistics)</b> <br/>
+                    2. <b>การใช้ AI ช่วยแก้ปัญหาผลไม้เน่าเสีย</b> ซึ่ง Shopee แก้ไม่ได้<br/>
+                    3. <b>การทำ Blockchain Traceability</b> ที่ผู้บริโภครุ่นใหม่และตลาดต่างชาติต้องการ
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-green-900 text-white py-8 text-center mt-10">
+        <p class="font-semibold text-lg">Thai Agri Market (National Project Blueprint)</p>
+        <p class="text-sm text-gray-300 mt-2">Business, Revenue Flow & Competitive Analysis Documentation</p>
+    </footer>
+
+</body>
+</html>
