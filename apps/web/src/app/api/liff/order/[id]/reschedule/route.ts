@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { resolveBuyerOrder, pushToOrchard } from "@/lib/fulfillment-scope";
-import { proposeReschedule } from "@/lib/fulfillment-tx";
+import { proposeReschedule, isDecideError } from "@/lib/fulfillment-tx";
 
 // #2 Buyer proposes a new delivery date. Supersedes any prior PENDING (one tx).
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -20,6 +20,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   const reschedule = await proposeReschedule({ orderId: id, proposedDate: date, proposedBy: "BUYER", note });
+  if (isDecideError(reschedule)) return NextResponse.json({ error: reschedule.error }, { status: reschedule.status });
   await pushToOrchard(id, "reschedule-proposed", `ลูกค้าขอเลื่อนวันส่งออเดอร์ ${id} เป็น ${date.toISOString().slice(0, 10)}`);
   return NextResponse.json({ reschedule }, { status: 201 });
 }

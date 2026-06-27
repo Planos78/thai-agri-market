@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePerm } from "@/lib/rbac";
 import { requireOrderScope, orderBuyerLineUserId } from "@/lib/fulfillment-scope";
-import { proposeReschedule } from "@/lib/fulfillment-tx";
+import { proposeReschedule, isDecideError } from "@/lib/fulfillment-tx";
 import { relayPush } from "@/lib/line";
 
 // #1 Orchard (admin) proposes a new delivery date. Supersedes any prior PENDING (one tx).
@@ -19,6 +19,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   const reschedule = await proposeReschedule({ orderId: id, proposedDate: date, proposedBy: "ORCHARD", note });
+  if (isDecideError(reschedule)) return NextResponse.json({ error: reschedule.error }, { status: reschedule.status });
 
   const buyerLine = await orderBuyerLineUserId(id);
   if (buyerLine) {

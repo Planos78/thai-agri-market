@@ -4,6 +4,7 @@ import { verifyHmac } from "@/lib/hmac";
 import { callbackPayloadString, PSP_SUCCESS } from "@/lib/psp";
 import { isIncreasePayInvoice } from "@/lib/fulfillment";
 import { relayPush } from "@/lib/line";
+import { calcTransferAmount } from "@/lib/money";
 
 // PSP payment callback. The only surface verified by signature, not JWT.
 // HMAC is checked BEFORE any DB access (AC4); the state flip is atomic (AC5).
@@ -55,7 +56,19 @@ async function handleOrder({ body, invoiceNo, amount, respCode, respDesc, tranRe
     if (!order) return { order: null as null | { lineUserId: string | null } };
 
     if (String(respCode) === PSP_SUCCESS) {
-      await tx.order.update({ where: { id: order.id }, data: { status: "PAID", paidAt: new Date() } });
+      // BUG-A fix: persist transferAmount when the order becomes PAID so the happy-path payout
+      // is eligible. Same calc fn as adjustments (consistent OBS-1 clamp). At paid time the
+      // refund deducted is the already-settled refundedAmount (normally 0).
+      const transferAmount = calcTransferAmount(
+        Number(order.totalAmount),
+        Number(order.feeAmount),
+        Number(order.vatFeeAmount),
+        Number(order.refundedAmount),
+      );
+      await tx.order.update({
+        where: { id: order.id },
+        data: { status: "PAID", paidAt: new Date(), transferAmount },
+      });
       await tx.payment.update({
         where: { orderId: order.id },
         data: { status: "COMPLETED", escrowStatus: "HELD", channel: "psp", callbackRef: tranRef ?? null },

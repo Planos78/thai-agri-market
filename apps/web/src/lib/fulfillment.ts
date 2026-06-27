@@ -49,6 +49,12 @@ export function canReview(orderStatus: string): boolean {
   return orderStatus === "DELIVERED";
 }
 
+// P5 OBS-2 guard: adjustments (REDUCE/INCREASE) and reschedules are only allowed while the
+// order is still in-flight. Block on settled/terminal states (DELIVERED/CANCELLED/EXPIRED).
+export function canAdjustOrder(orderStatus: string): boolean {
+  return orderStatus === "PAID" || orderStatus === "PREPARING" || orderStatus === "RESCHEDULED";
+}
+
 // --- Money math (item grain; reuse lib/money.ts) ---
 
 export interface AdjustResult {

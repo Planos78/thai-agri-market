@@ -106,6 +106,7 @@ live("phase 4 fulfillment (needs DB)", () => {
       proposedDate: new Date("2026-07-10T00:00:00Z"),
       proposedBy: "ORCHARD",
     });
+    if (isDecideError(first)) throw new Error("propose failed");
     expect(first.status).toBe("PENDING");
 
     const second = await proposeReschedule({
@@ -113,6 +114,7 @@ live("phase 4 fulfillment (needs DB)", () => {
       proposedDate: new Date("2026-07-15T00:00:00Z"),
       proposedBy: "ORCHARD",
     });
+    if (isDecideError(second)) throw new Error("propose failed");
     expect(second.status).toBe("PENDING");
 
     const refreshedFirst = await prisma.deliveryReschedule.findUniqueOrThrow({ where: { id: first.id } });
@@ -126,6 +128,7 @@ live("phase 4 fulfillment (needs DB)", () => {
   it("buyer/operator APPROVE sets Order.deliveryDate = proposedDate", async () => {
     const proposedDate = new Date("2026-07-15T00:00:00Z");
     const r = await proposeReschedule({ orderId: ctx.order.id, proposedDate, proposedBy: "BUYER" });
+    if (isDecideError(r)) throw new Error("propose failed");
     const res = await decideReschedule({
       orderId: ctx.order.id,
       rescheduleId: r.id,
@@ -154,6 +157,7 @@ live("phase 4 fulfillment (needs DB)", () => {
       proposedDate: new Date("2026-07-15T00:00:00Z"),
       proposedBy: "ORCHARD",
     });
+    if (isDecideError(r)) throw new Error("propose failed");
     const res = await decideReschedule({
       orderId: ctx.order.id,
       rescheduleId: r.id,
@@ -166,8 +170,8 @@ live("phase 4 fulfillment (needs DB)", () => {
     const order = await prisma.order.findUniqueOrThrow({ where: { id: ctx.order.id } });
     expect(order.status).toBe("CANCELLED");
     expect(Number(order.refundIntentAmount)).toBe(2250); // full total
-    // transfer = total - fee - vat - refundIntent = 2250 - 225 - 15.75 - 2250
-    expect(Number(order.transferAmount)).toBe(-240.75);
+    // P5 OBS-1: transfer clamps to 0 (was -240.75 = 2250 - 225 - 15.75 - 2250 before clamp).
+    expect(Number(order.transferAmount)).toBe(0);
     const reschedule = await prisma.deliveryReschedule.findUniqueOrThrow({ where: { id: r.id } });
     expect(reschedule.status).toBe("REJECTED");
     expect(reschedule.decidedBy).toBe("buyer-line"); // human decided; no cron/auto path

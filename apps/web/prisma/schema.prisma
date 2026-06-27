@@ -81,6 +81,9 @@ model Orchard {
   lineBindings  OrchardLineBinding[]
 
   reviews Review[]
+
+  // Phase 5: settlement
+  payoutAccounts PayoutAccount[]
 }
 
 model Lot {
@@ -134,6 +137,8 @@ model Order {
   totalAmount        Decimal
   transferAmount     Decimal?
   refundIntentAmount Decimal     @default(0) // P4: running sum of approved REDUCE refund intent (P5 pays)
+  refundedAmount     Decimal     @default(0) // P5: running sum of SUCCEEDED refunds (distinct from intent)
+  source             OrderSource @default(LIFF) // P5: which surface created the order
   status             OrderStatus @default(WAITING_PAYMENT)
   shippingAddress    String
   trackingNumber     String?
@@ -155,6 +160,15 @@ model Order {
   increasePayments IncreasePayment[]
   delivery         Delivery?
   reviews          Review[]
+
+  // Phase 5: settlement
+  refunds           Refund[]
+  payoutBatchOrders PayoutBatchOrder[]
+}
+
+enum OrderSource {
+  LIFF
+  SHOP
 }
 
 // Fruit order lifecycle.
@@ -270,6 +284,10 @@ model AdminUser {
 
   qcAudits     QcAudit[]
   orchardScope UserOrchardScope[]
+
+  // Phase 5: settlement audit (createdBy / approvedBy)
+  payoutBatches   PayoutBatch[]
+  refundsApproved Refund[]
 }
 
 model AdminRole {
@@ -501,6 +519,7 @@ model OrderAdjustment {
   order           Order            @relation(fields: [orderId], references: [id])
   orderItem       OrderItem        @relation(fields: [orderItemId], references: [id])
   increasePayment IncreasePayment?
+  refund          Refund? // P5: a REDUCE adjustment's intent converts to one Refund
 
   @@index([orderId])
   @@index([orderItemId])
@@ -552,4 +571,167 @@ model DeliveryImage {
   delivery Delivery @relation(fields: [deliveryId], references: [id])
 
   @@index([deliveryId])
+}
+
+// ---------------------------------------------------------------------------
+// Phase 5: settlement (payout + refund) — mock PSP only (Gate 0); human-only.
+// ---------------------------------------------------------------------------
+
+// Seeded BOT bank reference (roadmap §3.3).
+model Bank {
+  id       String  @id @default(uuid())
+  code     String  @unique // BOT bank code e.g. "014" SCB
+  name     String
+  isActive Boolean @default(true)
+
+  payoutAccounts PayoutAccount[]
+}
+
+// Orchard payout destination (§3.4). bug #11: real FKs.
+model PayoutAccount {
+  id        String   @id @default(uuid())
+  orchardId String
+  bankId    String
+  accNo     String
+  accName   String
+  payoutKey String? // PSP beneficiary key (mock)
+  isDefault Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orchard           Orchard            @relation(fields: [orchardId], references: [id])
+  bank              Bank               @relation(fields: [bankId], references: [id])
+  payoutBatchOrders PayoutBatchOrder[]
+
+  @@index([orchardId])
+}
+
+// Take-rate config (§5 #9). Single active row; env is bootstrap fallback.
+model PlatformConfig {
+  id        String   @id @default(uuid())
+  takeRate  Decimal  @default("0.10") // 0.10 / 0.125 / 0.15
+  vatRate   Decimal  @default("0.07")
+  isActive  Boolean  @default(true)
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([isActive])
+}
+
+// Human-created payout batch (§3.4 payout_transactions).
+model PayoutBatch {
+  id          String            @id @default(uuid())
+  batchNo     String            @unique // order-no scheme, prefix "PB"
+  status      PayoutBatchStatus @default(DRAFT)
+  totalAmount Decimal           @default(0)
+  pspBatchRef String?
+  createdBy   String // AdminUser.id (human-only)
+  submittedAt DateTime?
+  settledAt   DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  createdByAdmin AdminUser          @relation(fields: [createdBy], references: [id])
+  orders         PayoutBatchOrder[]
+  responses      PayoutResponse[]
+  errorLogs      PayoutErrorLog[]
+
+  @@index([status])
+}
+
+enum PayoutBatchStatus {
+  DRAFT
+  SUBMITTED
+  SUCCEEDED
+  FAILED
+}
+
+// Order line within a payout batch (§3.4 payout_transaction_orders).
+model PayoutBatchOrder {
+  id              String  @id @default(uuid())
+  payoutBatchId   String
+  orderId         String
+  payoutAccountId String
+  amount          Decimal // = order.transferAmount snapshot at batch time
+
+  batch         PayoutBatch   @relation(fields: [payoutBatchId], references: [id])
+  order         Order         @relation(fields: [orderId], references: [id])
+  payoutAccount PayoutAccount @relation(fields: [payoutAccountId], references: [id])
+
+  @@unique([payoutBatchId, orderId]) // one order per batch (dedup)
+  @@index([orderId])
+}
+
+// Raw payout callback audit (§3.4 payout_responses). bug #11: real FK to batch.
+model PayoutResponse {
+  id            String   @id @default(uuid())
+  payoutBatchId String
+  respCode      String
+  respDesc      String?
+  pspBatchRef   String?
+  signature     String?
+  rawPayload    String
+  accepted      Boolean  @default(false)
+  receivedAt    DateTime @default(now())
+
+  batch PayoutBatch @relation(fields: [payoutBatchId], references: [id])
+
+  @@index([payoutBatchId])
+}
+
+// Payout error audit (§3.4 payout_error_logs). bug #11: real FK to batch.
+model PayoutErrorLog {
+  id            String   @id @default(uuid())
+  payoutBatchId String
+  errorCode     String?
+  errorMessage  String
+  rawPayload    String?
+  createdAt     DateTime @default(now())
+
+  batch PayoutBatch @relation(fields: [payoutBatchId], references: [id])
+
+  @@index([payoutBatchId])
+}
+
+// Refund (§3.4 saleorder_refunds). Converts a P4 REDUCE intent or a full-order cancel.
+model Refund {
+  id                String       @id @default(uuid())
+  refundNo          String       @unique // order-no scheme, prefix "RF"
+  orderId           String
+  orderAdjustmentId String?      @unique // 1:1 with the REDUCE adjustment when item-grain
+  amount            Decimal
+  kind              RefundKind // FULL | PARTIAL
+  payoutType        RefundPayout @default(CUSTOMER) // CUSTOMER (refund buyer) | PLANT (clawback orchard)
+  status            RefundStatus @default(PENDING)
+  pspRef            String? // "RF-..." invoice for callback correlation (mock)
+  approvedBy        String // AdminUser.id (human-only)
+  approvedAt        DateTime?
+  settledAt         DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  order           Order            @relation(fields: [orderId], references: [id])
+  orderAdjustment OrderAdjustment? @relation(fields: [orderAdjustmentId], references: [id])
+  approvedByAdmin AdminUser        @relation(fields: [approvedBy], references: [id])
+
+  @@index([orderId])
+  @@index([status])
+}
+
+enum RefundKind {
+  FULL
+  PARTIAL
+}
+
+enum RefundPayout {
+  CUSTOMER
+  PLANT
+}
+
+enum RefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
 }

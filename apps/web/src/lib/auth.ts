@@ -54,3 +54,38 @@ export function bearer(req: Request): string | null {
   const m = h.match(/^Bearer\s+(.+)$/i);
   return m ? m[1] : null;
 }
+
+// --- P5 web-shop session (guest phone-OTP; reuses jose; separate secret from admin) ---
+const shopSecret = () => new TextEncoder().encode(process.env.SHOP_SESSION_SECRET ?? "dev-shop-secret");
+
+export const SHOP_SESSION_COOKIE = "shop_session";
+
+export interface ShopClaims {
+  phone: string;
+}
+
+export async function signShopSession(claims: ShopClaims): Promise<string> {
+  return new SignJWT({ phone: claims.phone })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("2h")
+    .sign(shopSecret());
+}
+
+export async function verifyShopSession(token: string): Promise<ShopClaims | null> {
+  try {
+    const { payload } = await jwtVerify(token, shopSecret());
+    const phone = String(payload.phone ?? "");
+    return phone ? { phone } : null;
+  } catch {
+    return null;
+  }
+}
+
+// Read the shop session from the httpOnly cookie on a request.
+export async function shopSessionFromRequest(req: Request): Promise<ShopClaims | null> {
+  const cookie = req.headers.get("cookie") ?? "";
+  const m = cookie.match(/(?:^|;\s*)shop_session=([^;]+)/);
+  if (!m) return null;
+  return verifyShopSession(decodeURIComponent(m[1]));
+}

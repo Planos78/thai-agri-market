@@ -13,4 +13,8 @@ describe("money", () => {
   it("transfer = total - fee - vat - refund", () => {
     expect(calcTransferAmount(1000, 100, 7, 0)).toBe(893);
   });
+  it("OBS-1: transfer clamps to 0 on full-order refund (never negative)", () => {
+    // 900 - 90 - 6.30 - 900 = -96.30 -> clamp 0
+    expect(calcTransferAmount(900, 90, 6.3, 900)).toBe(0);
+  });
 });

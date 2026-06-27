@@ -19,6 +19,12 @@ async function main() {
     ["fulfillment.reschedule", "Reschedule deliveries"],
     ["fulfillment.adjust", "Adjust order quantities"],
     ["delivery.write", "Write delivery + proof"],
+    // Phase 5: settlement (payout + refund) + config — human-only money perms.
+    ["payout.read", "Read payout accounts + batches"],
+    ["payout.write", "Manage payout accounts + batches"],
+    ["refund.read", "Read refunds"],
+    ["refund.write", "Create + approve refunds"],
+    ["config.write", "Manage platform config (take-rate/VAT)"],
   ];
   for (const [code, name] of permCodes) {
     const perm = await prisma.permission.upsert({
@@ -69,6 +75,46 @@ async function main() {
     create: { lineUserId: "mock-buyer-1", phone: "0800000000", name: "ลูกค้าทดสอบ", consent: true },
     update: {},
   });
+
+  // --- Phase 5: BOT bank reference (subset; codes per Bank of Thailand) ---
+  const banks: [string, string][] = [
+    ["002", "ธนาคารกรุงเทพ"],
+    ["004", "ธนาคารกสิกรไทย"],
+    ["006", "ธนาคารกรุงไทย"],
+    ["014", "ธนาคารไทยพาณิชย์"],
+    ["025", "ธนาคารกรุงศรีอยุธยา"],
+    ["030", "ธนาคารออมสิน"],
+  ];
+  for (const [code, name] of banks) {
+    await prisma.bank.upsert({ where: { code }, create: { code, name }, update: { name } });
+  }
+
+  // --- Phase 5: active PlatformConfig (take-rate from env bootstrap) ---
+  if ((await prisma.platformConfig.count({ where: { isActive: true } })) === 0) {
+    await prisma.platformConfig.create({
+      data: {
+        takeRate: process.env.PLATFORM_TAKE_RATE ?? "0.10",
+        vatRate: process.env.VAT_RATE ?? "0.07",
+        isActive: true,
+        note: "seed bootstrap",
+      },
+    });
+  }
+
+  // --- Phase 5: demo default PayoutAccount for the seeded orchard ---
+  const scb = await prisma.bank.findUniqueOrThrow({ where: { code: "014" } });
+  if ((await prisma.payoutAccount.count({ where: { orchardId: orchard.id } })) === 0) {
+    await prisma.payoutAccount.create({
+      data: {
+        orchardId: orchard.id,
+        bankId: scb.id,
+        accNo: "1234567890",
+        accName: "สวนทุเรียนลุงสมชาย",
+        isDefault: true,
+        isActive: true,
+      },
+    });
+  }
 
   console.log("seed done");
 }

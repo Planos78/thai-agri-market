@@ -3,6 +3,7 @@ import { HOLD_MS } from "@/lib/orders";
 import {
   canDecideReschedule,
   canDecideAdjustment,
+  canAdjustOrder,
   recomputeAdjustment,
   INCREASE_PAY_PREFIX,
 } from "@/lib/fulfillment";
@@ -41,6 +42,7 @@ export async function decideReschedule(opts: {
 
     const order = await tx.order.findUnique({ where: { id: opts.orderId } });
     if (!order) return err("order not found", 404);
+    if (!canAdjustOrder(order.status)) return err(`order not adjustable in state ${order.status}`, 409); // OBS-2
 
     if (opts.decision === "APPROVE") {
       const reschedule = await tx.deliveryReschedule.update({
@@ -86,6 +88,9 @@ export async function proposeReschedule(opts: {
   note?: string | null;
 }) {
   return prisma.$transaction(async (tx) => {
+    const order = await tx.order.findUnique({ where: { id: opts.orderId }, select: { status: true } });
+    if (!order) return err("order not found", 404);
+    if (!canAdjustOrder(order.status)) return err(`order not adjustable in state ${order.status}`, 409); // OBS-2
     await tx.deliveryReschedule.updateMany({
       where: { orderId: opts.orderId, status: "PENDING" },
       data: { status: "REJECTED", decidedAt: new Date() },
@@ -114,6 +119,9 @@ export async function proposeAdjustment(opts: {
 }) {
   const item = await prisma.orderItem.findUnique({ where: { id: opts.orderItemId } });
   if (!item || item.orderId !== opts.orderId) return err("order item not found", 404);
+  const ord = await prisma.order.findUnique({ where: { id: opts.orderId }, select: { status: true } });
+  if (!ord) return err("order not found", 404);
+  if (!canAdjustOrder(ord.status)) return err(`order not adjustable in state ${ord.status}`, 409); // OBS-2
   if (!Number.isInteger(opts.deltaQty) || opts.deltaQty <= 0) return err("deltaQty must be a positive integer", 422);
   if (opts.kind !== "REDUCE" && opts.kind !== "INCREASE") return err("invalid kind", 422);
   if (opts.kind === "REDUCE" && opts.deltaQty > item.quantity) {
@@ -161,6 +169,7 @@ export async function decideAdjustment(opts: {
     if (!item) return err("order item not found", 404);
     const order = await tx.order.findUnique({ where: { id: opts.orderId }, include: { items: true } });
     if (!order) return err("order not found", 404);
+    if (!canAdjustOrder(order.status)) return err(`order not adjustable in state ${order.status}`, 409); // OBS-2
 
     // Guards at decide-time (qty/stock may have changed since propose).
     if (adj.kind === "REDUCE" && adj.deltaQty > item.quantity) {

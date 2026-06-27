@@ -7,6 +7,7 @@ import {
   isIncreasePaymentExpired,
   canTransitionOrder,
   canReview,
+  canAdjustOrder,
   isIncreasePayInvoice,
   INCREASE_PAY_PREFIX,
 } from "@/lib/fulfillment";
@@ -60,5 +61,13 @@ describe("fulfillment transition guards", () => {
   it("invoice prefix disambiguates increase-pay from order", () => {
     expect(isIncreasePayInvoice(`${INCREASE_PAY_PREFIX}S260626001`)).toBe(true);
     expect(isIncreasePayInvoice("S260626001")).toBe(false);
+  });
+
+  // P5 OBS-2: adjust/reschedule allowed only while in-flight; blocked on settled/terminal.
+  it("OBS-2: canAdjustOrder true only for PAID/PREPARING/RESCHEDULED", () => {
+    for (const s of ["PAID", "PREPARING", "RESCHEDULED"]) expect(canAdjustOrder(s)).toBe(true);
+    for (const s of ["DELIVERED", "CANCELLED", "EXPIRED", "WAITING_PAYMENT"]) {
+      expect(canAdjustOrder(s)).toBe(false);
+    }
   });
 });
