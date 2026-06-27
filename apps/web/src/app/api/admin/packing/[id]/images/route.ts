@@ -1,0 +1,41 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { requirePerm } from "@/lib/rbac";
+import { requireOrderScope } from "@/lib/fulfillment-scope";
+import { getStorage } from "@/lib/storage";
+
+const MAX_BYTES = 8 * 1024 * 1024; // 8MB per file
+
+// P6: upload manifest evidence image(s). Stores URL/path only via storage adapter (bug #7).
+// packing.write; order-scoped.
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const claims = await requirePerm(req, "packing.write");
+  if (claims instanceof NextResponse) return claims;
+  const { id } = await params;
+
+  const manifest = await prisma.packingManifest.findUnique({ where: { id }, select: { id: true, orderId: true } });
+  if (!manifest) return NextResponse.json({ error: "manifest not found" }, { status: 404 });
+  const scopeErr = await requireOrderScope(claims, manifest.orderId);
+  if (scopeErr) return scopeErr;
+
+  const form = await req.formData().catch(() => null);
+  if (!form) return NextResponse.json({ error: "multipart/form-data required" }, { status: 400 });
+  const files = form.getAll("file").filter((f): f is File => f instanceof File);
+  if (files.length === 0) return NextResponse.json({ error: "at least one file required" }, { status: 400 });
+
+  const storage = getStorage();
+  const urls: string[] = [];
+  for (const file of files) {
+    if (file.size > MAX_BYTES) return NextResponse.json({ error: "file too large" }, { status: 413 });
+    if (!file.type.startsWith("image/")) return NextResponse.json({ error: "image files only" }, { status: 400 });
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const { url } = await storage.putImage({ name: file.name, bytes, contentType: file.type });
+    urls.push(url);
+  }
+
+  const images = [];
+  for (const url of urls) {
+    images.push(await prisma.manifestImage.create({ data: { manifestId: manifest.id, url } }));
+  }
+  return NextResponse.json({ images }, { status: 201 });
+}

@@ -19,7 +19,9 @@ export async function POST(req: Request) {
   await prisma.otpLog.update({ where: { reference }, data: { consumedAt: new Date() } });
   const token = await signShopSession({ phone: log.phone });
 
-  const res = NextResponse.json({ verified: true, phone: log.phone });
+  // P6: also return the token in the body so native mobile (no cookie jar) can send it as a
+  // Bearer header. Web continues to use the httpOnly cookie below (both accepted server-side).
+  const res = NextResponse.json({ verified: true, phone: log.phone, token });
   res.cookies.set(SHOP_SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",

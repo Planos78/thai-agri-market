@@ -1,3 +1,4 @@
+import type { Prisma, Refund } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { generateOrderNo } from "@/lib/order-no";
 import { getPsp, PSP_SUCCESS } from "@/lib/psp";
@@ -202,39 +203,43 @@ export async function applyPayoutCallback(opts: {
 // Refund
 // =========================================================================
 
-// Create a PENDING refund. PARTIAL converts an APPROVED REDUCE adjustment (amount = adj.amount);
-// FULL refunds the remaining order total. Over-refund invariant rejected (422). Human-only.
-export async function createRefund(opts: {
-  orderId: string;
-  kind: "FULL" | "PARTIAL";
-  orderAdjustmentId?: string | null;
-  amount?: number | null;
-  payoutType?: "CUSTOMER" | "PLANT";
-  approvedBy: string;
-}) {
-  return prisma.$transaction(async (tx) => {
-    // BUG-B fix: lock the order row FOR UPDATE (mirrors order-no.ts) so two concurrent refund
-    // creates serialize on the same row and cannot both pass the over-refund check (closes TOCTOU).
-    const locked = await tx.$queryRaw<{ id: string }[]>`
-      SELECT "id" FROM "Order" WHERE "id" = ${opts.orderId} FOR UPDATE`;
-    if (locked.length === 0) return err("order not found", 404);
+// Create a PENDING refund inside an EXISTING transaction. Same logic as createRefund, but
+// runs on the caller's tx so it can be composed atomically (P6: claim resolution + refund in
+// one $transaction). `claimId` links the refund 1:1 to a Claim when called from claim-resolve.
+export async function createRefundInTx(
+  tx: Prisma.TransactionClient,
+  opts: {
+    orderId: string;
+    kind: "FULL" | "PARTIAL";
+    orderAdjustmentId?: string | null;
+    amount?: number | null;
+    payoutType?: "CUSTOMER" | "PLANT";
+    approvedBy: string;
+    claimId?: string | null;
+  },
+): Promise<{ refund: Refund } | SettleError> {
+  // BUG-B fix: lock the order row FOR UPDATE (mirrors order-no.ts) so two concurrent refund
+  // creates serialize on the same row and cannot both pass the over-refund check (closes TOCTOU).
+  const locked = await tx.$queryRaw<{ id: string }[]>`
+    SELECT "id" FROM "Order" WHERE "id" = ${opts.orderId} FOR UPDATE`;
+  if (locked.length === 0) return err("order not found", 404);
 
-    const order = await tx.order.findUnique({ where: { id: opts.orderId } });
-    if (!order) return err("order not found", 404);
+  const order = await tx.order.findUnique({ where: { id: opts.orderId } });
+  if (!order) return err("order not found", 404);
 
-    // Count ALL non-terminal-failed refunds (PENDING + SUCCEEDED), not just order.refundedAmount
-    // (which counts SUCCEEDED only). In-flight PENDING refunds must count toward the limit.
-    const inFlight = await tx.refund.aggregate({
-      where: { orderId: opts.orderId, status: { in: ["PENDING", "SUCCEEDED"] } },
-      _sum: { amount: true },
-    });
-    const committedOrInFlight = Number(inFlight._sum.amount ?? 0);
+  // Count ALL non-terminal-failed refunds (PENDING + SUCCEEDED), not just order.refundedAmount
+  // (which counts SUCCEEDED only). In-flight PENDING refunds must count toward the limit.
+  const inFlight = await tx.refund.aggregate({
+    where: { orderId: opts.orderId, status: { in: ["PENDING", "SUCCEEDED"] } },
+    _sum: { amount: true },
+  });
+  const committedOrInFlight = Number(inFlight._sum.amount ?? 0);
 
-    let amount: number;
-    let orderAdjustmentId: string | null = null;
+  let amount: number;
+  let orderAdjustmentId: string | null = null;
 
-    if (opts.kind === "PARTIAL") {
-      if (!opts.orderAdjustmentId) return err("orderAdjustmentId required for PARTIAL refund", 422);
+  if (opts.kind === "PARTIAL") {
+    if (opts.orderAdjustmentId) {
       const adj = await tx.orderAdjustment.findUnique({
         where: { id: opts.orderAdjustmentId },
         include: { refund: true },
@@ -245,38 +250,58 @@ export async function createRefund(opts: {
       if (adj.refund) return err("adjustment already has a refund", 409);
       amount = Number(adj.amount);
       orderAdjustmentId = adj.id;
+    } else if (opts.amount != null) {
+      // P6: claim-driven PARTIAL refund — explicit amount, validated against the over-refund limit.
+      amount = Number(opts.amount);
+      if (!(amount > 0)) return err("refund amount must be > 0", 422);
     } else {
-      // FULL: refund the remaining unrefunded/uncommitted balance (totalAmount minus everything
-      // already SUCCEEDED or in-flight PENDING). Ignore client amount.
-      amount = fullRefundAmount(Number(order.totalAmount), committedOrInFlight);
-      if (!(amount > 0)) return err("refund exceeds order total (over-refund)", 422);
+      return err("orderAdjustmentId or amount required for PARTIAL refund", 422);
     }
+  } else {
+    // FULL: refund the remaining unrefunded/uncommitted balance (totalAmount minus everything
+    // already SUCCEEDED or in-flight PENDING). Ignore client amount.
+    amount = fullRefundAmount(Number(order.totalAmount), committedOrInFlight);
+    if (!(amount > 0)) return err("refund exceeds order total (over-refund)", 422);
+  }
 
-    if (
-      !isRefundWithinLimit({
-        totalAmount: Number(order.totalAmount),
-        committedOrInFlight,
-        amount,
-      })
-    ) {
-      return err("refund exceeds order total (over-refund)", 422);
-    }
+  if (
+    !isRefundWithinLimit({
+      totalAmount: Number(order.totalAmount),
+      committedOrInFlight,
+      amount,
+    })
+  ) {
+    return err("refund exceeds order total (over-refund)", 422);
+  }
 
-    const refundNo = await generateOrderNo(tx, "RF");
-    const refund = await tx.refund.create({
-      data: {
-        refundNo,
-        orderId: opts.orderId,
-        orderAdjustmentId,
-        amount,
-        kind: opts.kind,
-        payoutType: opts.payoutType ?? "CUSTOMER",
-        status: "PENDING",
-        approvedBy: opts.approvedBy,
-      },
-    });
-    return { refund };
+  const refundNo = await generateOrderNo(tx, "RF");
+  const refund = await tx.refund.create({
+    data: {
+      refundNo,
+      orderId: opts.orderId,
+      orderAdjustmentId,
+      claimId: opts.claimId ?? null,
+      amount,
+      kind: opts.kind,
+      payoutType: opts.payoutType ?? "CUSTOMER",
+      status: "PENDING",
+      approvedBy: opts.approvedBy,
+    },
   });
+  return { refund };
+}
+
+// Create a PENDING refund. PARTIAL converts an APPROVED REDUCE adjustment (amount = adj.amount);
+// FULL refunds the remaining order total. Over-refund invariant rejected (422). Human-only.
+export async function createRefund(opts: {
+  orderId: string;
+  kind: "FULL" | "PARTIAL";
+  orderAdjustmentId?: string | null;
+  amount?: number | null;
+  payoutType?: "CUSTOMER" | "PLANT";
+  approvedBy: string;
+}) {
+  return prisma.$transaction((tx) => createRefundInTx(tx, opts));
 }
 
 // Approve a PENDING refund -> call mock PSP, set pspRef + approvedAt. Stays PENDING until

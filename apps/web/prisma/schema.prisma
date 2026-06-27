@@ -23,6 +23,9 @@ model User {
   orchards Orchard[]
   orders   Order[]
   reviews  Review[]
+
+  // Phase 6: claims filed by this buyer
+  claims Claim[]
 }
 
 enum Role {
@@ -164,6 +167,10 @@ model Order {
   // Phase 5: settlement
   refunds           Refund[]
   payoutBatchOrders PayoutBatchOrder[]
+
+  // Phase 6: ops consoles
+  packingManifest PackingManifest?
+  claims          Claim[]
 }
 
 enum OrderSource {
@@ -193,6 +200,9 @@ model OrderItem {
   lot   Lot   @relation(fields: [lotId], references: [id])
 
   adjustments OrderAdjustment[]
+
+  // Phase 6: packing
+  packingItems PackingItem[]
 }
 
 // Per-prefix running counter. Incremented under SELECT ... FOR UPDATE inside a
@@ -700,6 +710,7 @@ model Refund {
   refundNo          String       @unique // order-no scheme, prefix "RF"
   orderId           String
   orderAdjustmentId String?      @unique // 1:1 with the REDUCE adjustment when item-grain
+  claimId           String?      @unique // P6: 1:1 with the Claim when a claim resolution refunds
   amount            Decimal
   kind              RefundKind // FULL | PARTIAL
   payoutType        RefundPayout @default(CUSTOMER) // CUSTOMER (refund buyer) | PLANT (clawback orchard)
@@ -714,6 +725,7 @@ model Refund {
   order           Order            @relation(fields: [orderId], references: [id])
   orderAdjustment OrderAdjustment? @relation(fields: [orderAdjustmentId], references: [id])
   approvedByAdmin AdminUser        @relation(fields: [approvedBy], references: [id])
+  claim           Claim?           @relation(fields: [claimId], references: [id])
 
   @@index([orderId])
   @@index([status])
@@ -734,4 +746,147 @@ enum RefundStatus {
   SUCCEEDED
   FAILED
   CANCELLED
+}
+
+// ---------------------------------------------------------------------------
+// Phase 6: ops consoles — packing/manifest reconcile (Flow 6) + claim intake/triage (Flow 7).
+// Both human-gated; AI may classify/flag only, never sign off / transition. Images URL-only.
+// ---------------------------------------------------------------------------
+
+// Count/label reconcile before logistics handoff. One manifest per Order (1:1).
+// expectedQty seeds from OrderItem.quantity; ops enters packedQty; variance flagged;
+// human sign-off required (cannot sign off from OPEN; VARIANCE sign-off needs a note).
+model PackingManifest {
+  id           String        @id @default(uuid())
+  orderId      String        @unique
+  status       PackingStatus @default(OPEN)
+  expectedCount Int          @default(0) // sum(expectedQty)
+  packedCount  Int           @default(0) // sum(packedQty)
+  hasVariance  Boolean       @default(false)
+  note         String? // human override note (required to sign off a VARIANCE manifest)
+  packedBy     String? // AdminUser.id who last reconciled
+  packedAt     DateTime?
+  signedOffBy  String? // AdminUser.id who signed off (human-only)
+  signedOffAt  DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  order  Order           @relation(fields: [orderId], references: [id])
+  items  PackingItem[]
+  images ManifestImage[]
+
+  @@index([status])
+}
+
+enum PackingStatus {
+  OPEN
+  RECONCILED
+  VARIANCE
+  SIGNED_OFF
+}
+
+// Per-OrderItem packing line. expectedQty from OrderItem.quantity; packedQty entered by ops.
+model PackingItem {
+  id          String   @id @default(uuid())
+  manifestId  String
+  orderItemId String
+  expectedQty Int
+  packedQty   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manifest  PackingManifest @relation(fields: [manifestId], references: [id])
+  orderItem OrderItem       @relation(fields: [orderItemId], references: [id])
+
+  @@unique([manifestId, orderItemId])
+  @@index([manifestId])
+}
+
+// Manifest evidence image. URL/path ONLY, never binary (bug #7).
+model ManifestImage {
+  id         String   @id @default(uuid())
+  manifestId String
+  url        String
+  uploadedAt DateTime @default(now())
+
+  manifest PackingManifest @relation(fields: [manifestId], references: [id])
+
+  @@index([manifestId])
+}
+
+// Buyer files a claim with evidence -> AI/ops classify+flag (allowed) -> human triage/resolve.
+// State machine in lib/claim.ts; transitions (except buyer-file OPEN) require claims.write.
+model Claim {
+  id          String        @id @default(uuid())
+  claimNo     String        @unique // order-no scheme, prefix "CL"
+  orderId     String
+  buyerId     String? // shop buyer User (phone path)
+  lineUserId  String? // LIFF buyer (LINE path)
+  category    ClaimCategory @default(OTHER)
+  severity    ClaimSeverity @default(LOW)
+  description String
+  status      ClaimStatus   @default(OPEN)
+  aiFlag      String? // AI/ops suggestion only (never transitions)
+  resolvedBy  String? // AdminUser.id (human-only)
+  resolvedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  order  Order        @relation(fields: [orderId], references: [id])
+  buyer  User?        @relation(fields: [buyerId], references: [id])
+  images ClaimImage[]
+  events ClaimEvent[]
+  refund Refund? // P6: 1:1 with the refund created on RESOLVED + createRefund
+
+  @@index([orderId])
+  @@index([status])
+}
+
+enum ClaimCategory {
+  DAMAGED
+  QUALITY
+  MISSING
+  OTHER
+}
+
+enum ClaimSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ClaimStatus {
+  OPEN
+  TRIAGING
+  RESOLVED
+  REJECTED
+  ESCALATED
+}
+
+// Claim evidence image. URL/path ONLY, never binary (bug #7).
+model ClaimImage {
+  id         String   @id @default(uuid())
+  claimId    String
+  url        String
+  uploadedAt DateTime @default(now())
+
+  claim Claim @relation(fields: [claimId], references: [id])
+
+  @@index([claimId])
+}
+
+// Append-only audit of every claim transition (written in the same tx as the transition).
+model ClaimEvent {
+  id         String       @id @default(uuid())
+  claimId    String
+  action     String // "FILE" | "TRIAGE" | "CLASSIFY" | "RESOLVE" | "REJECT" | "ESCALATE"
+  fromStatus ClaimStatus?
+  toStatus   ClaimStatus
+  actor      String // AdminUser.id, lineUserId, or buyer phone (file)
+  note       String?
+  createdAt  DateTime     @default(now())
+
+  claim Claim @relation(fields: [claimId], references: [id])
+
+  @@index([claimId])
 }

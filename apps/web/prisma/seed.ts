@@ -25,6 +25,11 @@ async function main() {
     ["refund.read", "Read refunds"],
     ["refund.write", "Create + approve refunds"],
     ["config.write", "Manage platform config (take-rate/VAT)"],
+    // Phase 6: ops consoles (packing/manifest + claim intake/triage) — human-only.
+    ["packing.read", "Read packing manifests"],
+    ["packing.write", "Write packing + sign-off"],
+    ["claims.read", "Read claims"],
+    ["claims.write", "Triage + resolve claims"],
   ];
   for (const [code, name] of permCodes) {
     const perm = await prisma.permission.upsert({

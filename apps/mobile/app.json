@@ -3,9 +3,14 @@
     "name": "mobile",
     "slug": "mobile",
     "version": "1.0.0",
+    "scheme": "thaiagri",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
     "ios": {
       "supportsTablet": true
     },

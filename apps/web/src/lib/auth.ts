@@ -82,10 +82,17 @@ export async function verifyShopSession(token: string): Promise<ShopClaims | nul
   }
 }
 
-// Read the shop session from the httpOnly cookie on a request.
+// Read the shop session from the httpOnly cookie OR an Authorization: Bearer token.
+// P6: native mobile has no shared cookie jar -> accept the same signed token as a bearer
+// (additive + backward-compatible; the web cookie path is unchanged).
 export async function shopSessionFromRequest(req: Request): Promise<ShopClaims | null> {
   const cookie = req.headers.get("cookie") ?? "";
   const m = cookie.match(/(?:^|;\s*)shop_session=([^;]+)/);
-  if (!m) return null;
-  return verifyShopSession(decodeURIComponent(m[1]));
+  if (m) {
+    const fromCookie = await verifyShopSession(decodeURIComponent(m[1]));
+    if (fromCookie) return fromCookie;
+  }
+  const token = bearer(req);
+  if (token) return verifyShopSession(token);
+  return null;
 }
