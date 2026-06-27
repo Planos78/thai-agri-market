@@ -30,6 +30,10 @@ async function main() {
     ["packing.write", "Write packing + sign-off"],
     ["claims.read", "Read claims"],
     ["claims.write", "Triage + resolve claims"],
+    // Phase 7: reports + reconciliation (read-mostly; freeze writes only the snapshot).
+    ["reports.read", "Read financial reports"],
+    ["reconciliation.read", "Read reconciliation console"],
+    ["reconciliation.write", "Freeze reconciliation snapshots"],
   ];
   for (const [code, name] of permCodes) {
     const perm = await prisma.permission.upsert({

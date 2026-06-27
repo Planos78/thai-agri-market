@@ -875,6 +875,43 @@ model ClaimImage {
   @@index([claimId])
 }
 
+// ---------------------------------------------------------------------------
+// Phase 7: scheduled jobs (cron dedup) + reconciliation audit snapshots.
+// ---------------------------------------------------------------------------
+
+// Once-per-period cron dedup (roadmap §3.5 cron_logs; atomic claim on task+period).
+// First caller create()s the row; a duplicate fire hits @@unique -> P2002 -> skip.
+model CronLog {
+  id     String   @id @default(uuid())
+  task   String // "expiry-sweep" | "reminder" | "push-sweep"
+  period String // "2026-06-27" (daily) | "2026-06-27T14" (hourly) | "2026-06-27T1405" (5-min slot)
+  status String   @default("RUNNING") // RUNNING | DONE | FAILED
+  note   String? // JSON summary (counts, ids)
+  runAt  DateTime @default(now())
+
+  @@unique([task, period])
+  @@index([task, runAt])
+}
+
+// Optional daily/monthly reconcile audit snapshot. Reconcile is computed live; this only
+// freezes a result + variance for history. Never on the hot path. createdBy kept a soft
+// String (AdminUser.id audit ref) to avoid a back-relation on AdminUser.
+model ReconciliationSnapshot {
+  id          String   @id @default(uuid())
+  period      String   @unique // "2026-06-27" or "2026-06"
+  paymentsIn  Decimal  @default(0)
+  payoutsOut  Decimal  @default(0)
+  refundsOut  Decimal  @default(0)
+  platformFee Decimal  @default(0)
+  heldEscrow  Decimal  @default(0)
+  variance    Decimal  @default(0)
+  note        String?
+  createdBy   String // AdminUser.id
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 // Append-only audit of every claim transition (written in the same tx as the transition).
 model ClaimEvent {
   id         String       @id @default(uuid())
