@@ -2,3 +2,6 @@ node_modules
 .DS_Store
 ruvector.db
 *.log
+
+# design handoff reference (not production code)
+design-handoff/
